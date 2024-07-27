@@ -3,6 +3,9 @@
 Fine-tune Stable Audio Open with DiT ControlNet. On 16GB VRAM GPU you can use adapter of 20% the size of the full DiT with bs=1
 and mixed fp16. Inference code coming soon.
 
+# TODO
+- [x] Add training code.
+- [ ] Add generation code.
 
 #  Demo 
 In the following we detail training a model for compositional music generation (edit, accompaniments, separation),
@@ -26,7 +29,7 @@ WANDB_API_KEY=a21dzbqlybbzccqla4txa21dzbqlybbzccqla4tx
 First download the sharded version of musdb18hq from https://drive.google.com/drive/folders/1bwiJbRH_0BsxGFkH0No-Rg_RHkVR2gc7?usp=sharing
 and put the files `test.tar` and `train.tar` inside `data/musdb18hq/`.
 
-# Train
+## Train
 
 For training run
 ```
