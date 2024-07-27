@@ -37,3 +37,9 @@ PYTHONUNBUFFERED=1 TAG=musdb-controlnet python train.py exp=train_musdb_controln
 datamodule.train_dataset.path=data/musdb18hq/train.tar \ 
 datamodule.val_dataset.path=data/musdb18hq/test.tar
 ```
+
+# Credits
+
+- Evans, Z., Parker, J. D., Carr, C. J., Zukowski, Z., Taylor, J., & Pons, J. (2024). Stable Audio Open. arXiv preprint arXiv:2407.14358.
+- Zhang, L., Rao, A., & Agrawala, M. (2023). Adding conditional control to text-to-image diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vision (pp. 3836-3847).
+- Chen, J., Wu, Y., Luo, S., Xie, E., Paul, S., Luo, P., ... & Li, Z. (2024). Pixart-{\delta}: Fast and controllable image generation with latent consistency models. arXiv preprint arXiv:2401.05252.
