@@ -26,7 +26,7 @@ WANDB_API_KEY=a21dzbqlybbzccqla4txa21dzbqlybbzccqla4tx
 
 ## Dataset (MusDB18HQ)
 
-First download the sharded version of musdb18hq from https://drive.google.com/drive/folders/1bwiJbRH_0BsxGFkH0No-Rg_RHkVR2gc7?usp=sharing
+First download the sharded version of [MusDB18HQ](https://sigsep.github.io/datasets/musdb.html#musdb18-compressed-stems) from https://drive.google.com/drive/folders/1bwiJbRH_0BsxGFkH0No-Rg_RHkVR2gc7?usp=sharing
 and put the files `test.tar` and `train.tar` inside `data/musdb18hq/`.
 
 ## Train
