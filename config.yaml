@@ -1,0 +1,18 @@
+defaults:
+  - _self_
+  - exp: null
+  - override hydra/hydra_logging: colorlog
+  - override hydra/job_logging: colorlog
+
+seed: 12345
+ignore_warnings: True
+print_config: False # Prints tree with all configurations
+work_dir: ${hydra:runtime.cwd}  # This is the root of the project
+logs_dir: ${work_dir}${oc.env:DIR_LOGS}  # This is the root for all logs
+data_dir: ${work_dir}${oc.env:DIR_DATA} # This is the root for all data
+ckpt_dir: ${logs_dir}/ckpts/${now:%Y-%m-%d-%H-%M-%S}
+# Hydra experiment configs log dir
+hydra:
+  run:
+    dir: ${logs_dir}/runs/${now:%Y-%m-%d-%H-%M-%S}
+

@@ -1,0 +1,11 @@
+.venv
+.vscode
+.DS_Store
+__pycache__
+checkpoints/*
+data/*
+logs/*
+wandb/*
+.idea/
+.env
+*.log

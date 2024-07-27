@@ -1,0 +1,11 @@
+# @package _global_
+
+model:
+  _target_: main.module_controlnet.Model
+  lr: 1e-4
+  lr_beta1: 0.95
+  lr_beta2: 0.999
+  lr_eps: 1e-6
+  lr_weight_decay: 1e-3
+  depth_factor: 0.2
+
