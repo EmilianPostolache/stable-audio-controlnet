@@ -1,7 +1,7 @@
 import torch
 from stable_audio_tools.inference.generation import generate_diffusion_cond
-from stable_audio_tools.models.diffusion import UNetCFG1DWrapper, UNet1DCondWrapper,  \
-    ConditionedDiffusionModelWrapper, ConditionedDiffusionModel
+from stable_audio_tools.models.diffusion import UNetCFG1DWrapper, UNet1DCondWrapper, \
+    ConditionedDiffusionModelWrapper, ConditionedDiffusionModel, DiTWrapper
 from torch import nn
 import numpy as np
 import typing as tp
@@ -15,132 +15,64 @@ from stable_audio_tools.models.pretransforms import Pretransform
 from main.controlnet.controlnet import ControlNetDiffusionTransformer
 
 
-class ConditionedControlNetDiffusionModel(nn.Module):
-    def __init__(self,
-                *args,
-                supports_cross_attention: bool = False,
-                supports_input_concat: bool = False,
-                supports_global_cond: bool = False,
-                supports_prepend_cond: bool = False,
-                **kwargs):
-        super().__init__(*args, **kwargs)
-        self.supports_cross_attention = supports_cross_attention
-        self.supports_input_concat = supports_input_concat
-        self.supports_global_cond = supports_global_cond
-        self.supports_prepend_cond = supports_prepend_cond
 
-    def forward(self,
-                x: torch.Tensor,
-                y: torch.Tensor,
-                t: torch.Tensor,
-                cross_attn_cond: torch.Tensor = None,
-                cross_attn_mask: torch.Tensor = None,
-                input_concat_cond: torch.Tensor = None,
-                global_embed: torch.Tensor = None,
-                prepend_cond: torch.Tensor = None,
-                prepend_cond_mask: torch.Tensor = None,
-                batch_cfg: bool = False,
-                rescale_cfg: bool = False,
-                **kwargs):
-        raise NotImplementedError()
-
-class DiTControlNetWrapper(ConditionedControlNetDiffusionModel):
+class DiTControlNetWrapper(ConditionedDiffusionModel):
     def __init__(
         self,
-        *args,
-        **kwargs
-    ):
-        super().__init__(supports_cross_attention=True, supports_global_cond=False, supports_input_concat=False)
-
-        self.model = ControlNetDiffusionTransformer(*args, **kwargs)
-
-        # with torch.no_grad():
-        #     for param in self.model.parameters():
-        #        param *= 0.5
-
-    def forward(self,
-                x,
-                y,
-                t,
-                cross_attn_cond=None,
-                cross_attn_mask=None,
-                input_concat_cond=None,
-                negative_input_concat_cond=None,
-                global_cond=None,
-                negative_global_cond=None,
-                prepend_cond=None,
-                prepend_cond_mask=None,
-                batch_cfg: bool = True,
-                rescale_cfg: bool = False,
-                **kwargs):
-
-        assert batch_cfg, "batch_cfg must be True for DiTWrapper"
-        #assert negative_input_concat_cond is None, "negative_input_concat_cond is not supported for DiTWrapper"
-
-        return self.model(
-            x,
-            y,
-            t,
-            cross_attn_cond=cross_attn_cond,
-            cross_attn_cond_mask=cross_attn_mask,
-            input_concat_cond=input_concat_cond,
-            prepend_cond=prepend_cond,
-            prepend_cond_mask=prepend_cond_mask,
-            global_embed=global_cond,
-            **kwargs)
-
-class DiTWrapper(ConditionedDiffusionModel):
-    def __init__(
-        self,
+        controlnet_depth_factor,
         *args,
         **kwargs
     ):
         super().__init__(supports_cross_attention=True, supports_global_cond=False, supports_input_concat=False)
 
         self.model = DiffusionTransformer(*args, **kwargs)
-
-        with torch.no_grad():
-            for param in self.model.parameters():
-                param *= 0.5
+        kwargs["depth"] = int(controlnet_depth_factor * kwargs["depth"])
+        self.controlnet = ControlNetDiffusionTransformer(*args, **kwargs)
+        # with torch.no_grad():
+        #     for param in self.model.parameters():
+        #        param *= 0.5
 
     def forward(self,
                 x,
                 t,
+                controlnet_cond=None,
                 cross_attn_cond=None,
                 cross_attn_mask=None,
-                negative_cross_attn_cond=None,
-                negative_cross_attn_mask=None,
                 input_concat_cond=None,
                 negative_input_concat_cond=None,
                 global_cond=None,
                 negative_global_cond=None,
                 prepend_cond=None,
                 prepend_cond_mask=None,
-                cfg_scale=1.0,
-                cfg_dropout_prob: float = 0.0,
                 batch_cfg: bool = True,
                 rescale_cfg: bool = False,
-                scale_phi: float = 0.0,
                 **kwargs):
 
         assert batch_cfg, "batch_cfg must be True for DiTWrapper"
         #assert negative_input_concat_cond is None, "negative_input_concat_cond is not supported for DiTWrapper"
 
+        controlnet_embeds = self.controlnet(x,
+                                            t,
+                                            controlnet_cond=controlnet_cond,
+                                            cross_attn_cond=cross_attn_cond,
+                                            cross_attn_cond_mask=cross_attn_mask,
+                                            input_concat_cond=input_concat_cond,
+                                            prepend_cond=prepend_cond,
+                                            prepend_cond_mask=prepend_cond_mask,
+                                            global_embed=global_cond,
+                                            **kwargs)
         return self.model(
             x,
             t,
+            controlnet_embeds=controlnet_embeds,
             cross_attn_cond=cross_attn_cond,
             cross_attn_cond_mask=cross_attn_mask,
-            negative_cross_attn_cond=negative_cross_attn_cond,
-            negative_cross_attn_mask=negative_cross_attn_mask,
             input_concat_cond=input_concat_cond,
             prepend_cond=prepend_cond,
             prepend_cond_mask=prepend_cond_mask,
-            cfg_scale=cfg_scale,
-            cfg_dropout_prob=cfg_dropout_prob,
-            scale_phi=scale_phi,
             global_embed=global_cond,
             **kwargs)
+
 
 class ConditionedControlNetDiffusionModelWrapper(nn.Module):
     """
@@ -150,7 +82,6 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
             self,
             model: ConditionedDiffusionModel,
             conditioner: MultiConditioner,
-            controlnet: ConditionedControlNetDiffusionModel,
             io_channels,
             sample_rate,
             min_input_length: int,
@@ -165,7 +96,6 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
 
         self.model = model
         self.conditioner = conditioner
-        self.controlnet = controlnet
         self.io_channels = io_channels
         self.sample_rate = sample_rate
         self.diffusion_objective = diffusion_objective
@@ -255,16 +185,12 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
                 "prepend_cond_mask": prepend_cond_mask
             }
 
-    def forward(self, x: torch.Tensor, y: torch.Tensor, t: torch.Tensor, cond: tp.Dict[str, tp.Any], **kwargs):
+    def forward(self, x: torch.Tensor, t: torch.Tensor, cond: tp.Dict[str, tp.Any], **kwargs):
         conditioning_inputs = self.get_conditioning_inputs(cond)
-        controlnet_embeds = self.controlnet(x, y, t, **conditioning_inputs, **kwargs)
-        kwargs['controlnet_embeds'] = controlnet_embeds
         return self.model(x, t, **conditioning_inputs, **kwargs)
 
-    # TODO: enable inference
     def generate(self, *args, **kwargs):
-        ...
-        # return generate_diffusion_cond(self, *args, **kwargs)
+        return generate_diffusion_cond(self, *args, **kwargs)
 
 
 
@@ -288,6 +214,8 @@ def create_diffusion_cond_from_config(config: tp.Dict[str, tp.Any]):
         diffusion_model = UNet1DCondWrapper(**diffusion_model_config)
     elif diffusion_model_type == 'dit':
         diffusion_model = DiTWrapper(**diffusion_model_config)
+    elif diffusion_model_type == 'dit_controlnet':
+        diffusion_model = DiTControlNetWrapper(**diffusion_model_config)
 
     io_channels = model_config.get('io_channels', None)
     assert io_channels is not None, "Must specify io_channels in model config"
@@ -320,6 +248,8 @@ def create_diffusion_cond_from_config(config: tp.Dict[str, tp.Any]):
         min_input_length *= np.prod(diffusion_model_config["factors"])
     elif diffusion_model_type == "dit":
         min_input_length *= diffusion_model.model.patch_size
+    elif diffusion_model_type == "dit_controlnet":
+        min_input_length *= diffusion_model.model.patch_size
 
     # Get the proper wrapper class
 
@@ -339,9 +269,7 @@ def create_diffusion_cond_from_config(config: tp.Dict[str, tp.Any]):
             wrapper_fn = MonoToStereoDiffusionPrior
     elif model_type == "diffusion_cond_controlnet":
         wrapper_fn = ConditionedControlNetDiffusionModelWrapper
-        depth = int(diffusion_model_config.pop('depth') * config['controlnet_depth_factor'])
-        assert diffusion_model_type == 'dit'
-        extra_kwargs['controlnet'] = DiTControlNetWrapper(depth=depth, **diffusion_model_config)
+        assert diffusion_model_type == 'dit_controlnet'
 
     return wrapper_fn(
         diffusion_model,

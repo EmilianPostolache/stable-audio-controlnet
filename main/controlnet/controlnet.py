@@ -22,7 +22,7 @@ from x_transformers import ContinuousTransformerWrapper, Encoder
 from stable_audio_tools.models.blocks import FourierFeatures
 from stable_audio_tools.models.transformer import ContinuousTransformer
 
-from main.controlnet.conditioning import ControlNetConditioningEmbedding
+# from main.controlnet.conditioning import ControlNetConditioningEmbedding
 
 
 
@@ -149,10 +149,10 @@ class ControlNetDiffusionTransformer(nn.Module):
 
         # controlnet stuff
 
-        self.controlnet_cond_embedding = ControlNetConditioningEmbedding(
-            cond_dim=controlnet_cond_dim,
-            embed_dim=embed_dim,
-        )
+        # self.controlnet_cond_embedding = ControlNetConditioningEmbedding(
+        #     cond_dim=controlnet_cond_dim,
+        #     embed_dim=embed_dim,
+        # )
 
         self.conv_in = nn.Conv1d(dim_in, dim_in, 1, bias=False)
         nn.init.zeros_(self.conv_in.weight)
@@ -225,7 +225,7 @@ class ControlNetDiffusionTransformer(nn.Module):
             prepend_length = prepend_inputs.shape[1]
 
         x = self.preprocess_conv(x) + x
-        y = self.controlnet_cond_embedding(y)
+        # y = self.controlnet_cond_embedding(y)
         y = self.conv_in(y)
         x = x + y
 
@@ -257,7 +257,6 @@ class ControlNetDiffusionTransformer(nn.Module):
     def forward(
             self,
             x,
-            y,
             t,
             cross_attn_cond=None,
             cross_attn_cond_mask=None,
@@ -281,7 +280,6 @@ class ControlNetDiffusionTransformer(nn.Module):
 
         return self._forward(
             x,
-            y,
             t,
             cross_attn_cond=cross_attn_cond,
             cross_attn_cond_mask=cross_attn_cond_mask,
