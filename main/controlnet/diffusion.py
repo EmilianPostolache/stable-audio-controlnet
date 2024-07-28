@@ -1,7 +1,7 @@
 import torch
 from stable_audio_tools.inference.generation import generate_diffusion_cond
 from stable_audio_tools.models.diffusion import UNetCFG1DWrapper, UNet1DCondWrapper, \
-    ConditionedDiffusionModelWrapper, ConditionedDiffusionModel, DiTWrapper
+    ConditionedDiffusionModelWrapper, DiTWrapper
 from torch import nn
 import numpy as np
 import typing as tp
@@ -14,7 +14,39 @@ from stable_audio_tools.models.pretransforms import Pretransform
 
 from main.controlnet.controlnet import ControlNetDiffusionTransformer
 
+class ConditionedDiffusionModel(nn.Module):
+    def __init__(self,
+                *args,
+                supports_cross_attention: bool = False,
+                supports_input_concat: bool = False,
+                supports_global_cond: bool = False,
+                supports_prepend_cond: bool = False,
+                supports_controlnet_cond: bool = False,
+                **kwargs):
+        super().__init__(*args, **kwargs)
+        self.supports_cross_attention = supports_cross_attention
+        self.supports_input_concat = supports_input_concat
+        self.supports_global_cond = supports_global_cond
+        self.supports_prepend_cond = supports_prepend_cond
+        self.supports_controlnet_cond = supports_controlnet_cond
 
+
+    def forward(self,
+                x: torch.Tensor,
+                t: torch.Tensor,
+                controlnet_cond: torch.Tensor = None,
+                cross_attn_cond: torch.Tensor = None,
+                cross_attn_mask: torch.Tensor = None,
+                input_concat_cond: torch.Tensor = None,
+                global_embed: torch.Tensor = None,
+                prepend_cond: torch.Tensor = None,
+                prepend_cond_mask: torch.Tensor = None,
+                cfg_scale: float = 1.0,
+                cfg_dropout_prob: float = 0.0,
+                batch_cfg: bool = False,
+                rescale_cfg: bool = False,
+                **kwargs):
+        raise NotImplementedError()
 
 class DiTControlNetWrapper(ConditionedDiffusionModel):
     def __init__(
@@ -46,6 +78,9 @@ class DiTControlNetWrapper(ConditionedDiffusionModel):
                 prepend_cond_mask=None,
                 batch_cfg: bool = True,
                 rescale_cfg: bool = False,
+                cfg_scale: float = 1.0,
+                cfg_dropout_prob: float = 0.0,
+                scale_phi: float = 0.0,
                 **kwargs):
 
         assert batch_cfg, "batch_cfg must be True for DiTWrapper"
@@ -71,6 +106,9 @@ class DiTControlNetWrapper(ConditionedDiffusionModel):
             prepend_cond=prepend_cond,
             prepend_cond_mask=prepend_cond_mask,
             global_embed=global_cond,
+            cfg_scale=cfg_scale,
+            cfg_dropout_prob=cfg_dropout_prob,
+            scale_phi=scale_phi,
             **kwargs)
 
 
@@ -80,7 +118,7 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
     """
     def __init__(
             self,
-            model: ConditionedDiffusionModel,
+            model,
             conditioner: MultiConditioner,
             io_channels,
             sample_rate,
@@ -91,6 +129,7 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
             global_cond_ids: tp.List[str] = [],
             input_concat_ids: tp.List[str] = [],
             prepend_cond_ids: tp.List[str] = [],
+            controlnet_cond_ids: tp.List[str] = [],
             ):
         super().__init__()
 
@@ -104,6 +143,7 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
         self.global_cond_ids = global_cond_ids
         self.input_concat_ids = input_concat_ids
         self.prepend_cond_ids = prepend_cond_ids
+        self.controlnet_cond_ids = controlnet_cond_ids
         self.min_input_length = min_input_length
 
     def get_conditioning_inputs(self, conditioning_tensors: tp.Dict[str, tp.Any], negative=False):
@@ -113,6 +153,7 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
         input_concat_cond = None
         prepend_cond = None
         prepend_cond_mask = None
+        controlnet_cond = None
 
         if len(self.cross_attn_cond_ids) > 0:
             # Concatenate all cross-attention inputs over the sequence dimension
@@ -168,6 +209,12 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
             prepend_cond = torch.cat(prepend_conds, dim=1)
             prepend_cond_mask = torch.cat(prepend_cond_masks, dim=1)
 
+        if len(self.controlnet_cond_ids) > 0:
+            controlnet_conds = []
+            for key in self.controlnet_cond_ids:
+                controlnet_conds.append(conditioning_tensors[key][0].unsqueeze(1))
+            controlnet_cond = torch.cat(controlnet_conds, dim=1).sum(dim=1)
+
         if negative:
             return {
                 "negative_cross_attn_cond": cross_attention_input,
@@ -182,7 +229,8 @@ class ConditionedControlNetDiffusionModelWrapper(nn.Module):
                 "global_cond": global_cond,
                 "input_concat_cond": input_concat_cond,
                 "prepend_cond": prepend_cond,
-                "prepend_cond_mask": prepend_cond_mask
+                "prepend_cond_mask": prepend_cond_mask,
+                "controlnet_cond": controlnet_cond
             }
 
     def forward(self, x: torch.Tensor, t: torch.Tensor, cond: tp.Dict[str, tp.Any], **kwargs):
@@ -235,6 +283,7 @@ def create_diffusion_cond_from_config(config: tp.Dict[str, tp.Any]):
     global_cond_ids = diffusion_config.get('global_cond_ids', [])
     input_concat_ids = diffusion_config.get('input_concat_ids', [])
     prepend_cond_ids = diffusion_config.get('prepend_cond_ids', [])
+    controlnet_cond_ids = diffusion_config.get('controlnet_cond_ids', [])
 
     pretransform = model_config.get("pretransform", None)
 
@@ -276,6 +325,7 @@ def create_diffusion_cond_from_config(config: tp.Dict[str, tp.Any]):
         conditioner,
         min_input_length=min_input_length,
         sample_rate=sample_rate,
+        controlnet_cond_ids=controlnet_cond_ids,
         cross_attn_cond_ids=cross_attention_ids,
         global_cond_ids=global_cond_ids,
         input_concat_ids=input_concat_ids,

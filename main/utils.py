@@ -229,13 +229,13 @@ def log_wandb_audio_batch(
         tmpdir = Path(tmpdir)
         for i in range(num_items):
             torchaudio.save(
-                tmpdir / f"{i}.mp3", samples[i].detach().cpu(), sample_rate=sampling_rate
+                tmpdir / f"{i}.wav", samples[i].detach().cpu(), sample_rate=sampling_rate
             )
 
         logger.log(
             {
                 f"sample_{i}_{id}": wandb.Audio(
-                    str(tmpdir / f"{i}.mp3"),
+                    str(tmpdir / f"{i}.wav"),
                     caption=caption,
                     sample_rate=sampling_rate,
                 )

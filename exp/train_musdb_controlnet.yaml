@@ -5,7 +5,7 @@ defaults:
 
 train: True
 sample_rate: 44100
-chunk_dur: 47.55
+chunk_dur: 47.57
 
 log_every_n_steps: 5000
 
@@ -57,10 +57,8 @@ callbacks:
 
   audio_samples_logger:
     _target_: main.module_controlnet.SampleLogger
-    sample_rate: ${sample_rate}
-    chunk_dur: ${chunk_dur}
     sampling_steps: [ 100 ]
-    embedding_scale: 7.0
+    cfg_scale: 7.0
     num_samples: ${datamodule.batch_size_val}
 
 loggers:

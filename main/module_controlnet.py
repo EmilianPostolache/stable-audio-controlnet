@@ -6,9 +6,12 @@ import torch
 
 from pytorch_lightning import Callback, Trainer
 from pytorch_lightning.loggers import WandbLogger
+from stable_audio_tools.inference.generation import generate_diffusion_cond
+
 from main.controlnet.pretrained import get_pretrained_controlnet_model
 from stable_audio_tools.inference.sampling import get_alphas_sigmas
 from torch.utils.data import DataLoader
+from main.utils import log_wandb_audio_batch, log_wandb_audio_spectrogram
 
 
 
@@ -36,8 +39,12 @@ class Model(pl.LightningModule):
         self.diffusion_objective = "v"
         model, model_config = get_pretrained_controlnet_model("stabilityai/stable-audio-open-1.0",
                                                               depth_factor=depth_factor)
+        self.model_config = model_config
+        self.sample_size = model_config["sample_size"]
+        self.sample_rate = model_config["sample_rate"]
+
         self.model = model
-        self.model.model.requires_grad_(False)
+        self.model.model.model.requires_grad_(False)
         self.model.conditioner.requires_grad_(False)
         self.model.conditioner.eval()
         self.model.pretransform.requires_grad_(False)
@@ -45,7 +52,7 @@ class Model(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        params = list(self.model.controlnet.parameters())
+        params = list(self.model.model.controlnet.parameters())
         optimizer = torch.optim.AdamW(
             params,
             lr=self.lr,
@@ -58,7 +65,7 @@ class Model(pl.LightningModule):
     def step(self, batch):
         x, y, z = batch
         diffusion_input = self.model.pretransform.encode(x.unsqueeze(1).repeat_interleave(2, dim=1))
-        diffusion_y = self.model.pretransform.encode(y.unsqueeze(1).repeat_interleave(2, dim=1))
+        diffusion_y = y.unsqueeze(1).repeat_interleave(2, dim=1)
 
         # if self.timestep_sampler == "uniform":
         #     # Draw uniformly distributed continuous timesteps
@@ -84,9 +91,9 @@ class Model(pl.LightningModule):
 
 
         output = self.model(x=noised_inputs,
-                            y=diffusion_y,
                             t=t.to(self.device),
-                            cond=self.model.conditioner([{"prompt": z[0], "seconds_start": 0, "seconds_total": 47.0}],
+                            cond=self.model.conditioner([{"prompt": z[0], "seconds_start": 0, "seconds_total": 47.0,
+                                                          "audio": diffusion_y}],
                             device=self.device))
         loss = torch.nn.functional.mse_loss(output, targets).mean()
         return loss
@@ -179,16 +186,12 @@ def get_wandb_logger(trainer: Trainer) -> Optional[WandbLogger]:
 class SampleLogger(Callback):
     def __init__(
         self,
-        sample_rate: int,
-        chunk_dur: float,
         sampling_steps: List[int],
-        embedding_scale: float,
+        cfg_scale: float,
         num_samples: int = 1
     ) -> None:
-        self.sample_rate = sample_rate
-        self.chunk_dur = chunk_dur
         self.sampling_steps = sampling_steps
-        self.embedding_scale = embedding_scale
+        self.cfg_scale = cfg_scale
         self.num_samples = num_samples
         self.log_next = False
 
@@ -208,7 +211,61 @@ class SampleLogger(Callback):
         if is_train:
             pl_module.eval()
         wandb_logger = get_wandb_logger(trainer).experiment
+        _, y, z = batch
+        y = torch.clip(y, -1, 1)
 
+        conditioning = [{
+            "audio": y.unsqueeze(1).repeat_interleave(2, dim=1).cuda(),
+            "prompt": z[0],
+            "seconds_start": 0,
+            "seconds_total": 47.0,
+        }]
+
+
+        for i in range(self.num_samples):
+            log_wandb_audio_batch(
+                logger=wandb_logger,
+                id=f"true_{i}",
+                samples=y[i:i+1].unsqueeze(1),
+                sampling_rate=pl_module.sample_rate,
+                caption=f"Prompt: {z[i]}",
+            )
+            log_wandb_audio_spectrogram(
+                logger=wandb_logger,
+                id=f"true_{i}",
+                samples=y[i:i+1].unsqueeze(1),
+                sampling_rate=pl_module.sample_rate,
+                caption=f"Prompt: {z[i]}",
+            )
+
+        for steps in self.sampling_steps:
+
+            output = generate_diffusion_cond(
+                pl_module.model,
+                steps=steps,
+                cfg_scale=7.0,
+                conditioning=conditioning,
+                sample_size=pl_module.sample_size,
+                sigma_min=0.3,
+                sigma_max=500,
+                sampler_type="dpmpp-3m-sde",
+                device="cuda"
+            )
+            for i in range(self.num_samples):
+                log_wandb_audio_batch(
+                    logger=wandb_logger,
+                    id=f"sample_x_{i}",
+                    samples=torch.tensor(output[i:i + 1]),
+                    sampling_rate=pl_module.sample_rate,
+                    caption=f"Sampled in {steps} steps.",
+                )
+                log_wandb_audio_spectrogram(
+                    logger=wandb_logger,
+                    id=f"sample_x_{i}",
+                    samples=torch.tensor(output[i:i + 1]),
+                    sampling_rate=pl_module.sample_rate,
+                    caption=f"Sampled in {steps} steps.",
+                )
 
         if is_train:
             pl_module.train()

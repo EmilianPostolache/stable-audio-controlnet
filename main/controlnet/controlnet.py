@@ -31,7 +31,6 @@ class ControlNetDiffusionTransformer(nn.Module):
                  io_channels=32,
                  patch_size=1,
                  embed_dim=768,
-                 controlnet_cond_dim=0,
                  cond_token_dim=0,
                  project_cond_tokens=True,
                  global_cond_dim=0,
@@ -149,11 +148,6 @@ class ControlNetDiffusionTransformer(nn.Module):
 
         # controlnet stuff
 
-        # self.controlnet_cond_embedding = ControlNetConditioningEmbedding(
-        #     cond_dim=controlnet_cond_dim,
-        #     embed_dim=embed_dim,
-        # )
-
         self.conv_in = nn.Conv1d(dim_in, dim_in, 1, bias=False)
         nn.init.zeros_(self.conv_in.weight)
 
@@ -164,8 +158,8 @@ class ControlNetDiffusionTransformer(nn.Module):
     def _forward(
             self,
             x,
-            y,
             t,
+            controlnet_cond=None,
             mask=None,
             cross_attn_cond=None,
             cross_attn_cond_mask=None,
@@ -173,6 +167,7 @@ class ControlNetDiffusionTransformer(nn.Module):
             global_embed=None,
             prepend_cond=None,
             prepend_cond_mask=None,
+            cfg_scale=None,
             **kwargs):
 
         if cross_attn_cond is not None:
@@ -225,9 +220,8 @@ class ControlNetDiffusionTransformer(nn.Module):
             prepend_length = prepend_inputs.shape[1]
 
         x = self.preprocess_conv(x) + x
-        # y = self.controlnet_cond_embedding(y)
-        y = self.conv_in(y)
-        x = x + y
+        controlnet_cond = self.conv_in(controlnet_cond)
+        x = x + controlnet_cond
 
         x = rearrange(x, "b c t -> b t c")
 
@@ -258,6 +252,7 @@ class ControlNetDiffusionTransformer(nn.Module):
             self,
             x,
             t,
+            controlnet_cond=None,
             cross_attn_cond=None,
             cross_attn_cond_mask=None,
             input_concat_cond=None,
@@ -281,6 +276,7 @@ class ControlNetDiffusionTransformer(nn.Module):
         return self._forward(
             x,
             t,
+            controlnet_cond=controlnet_cond,
             cross_attn_cond=cross_attn_cond,
             cross_attn_cond_mask=cross_attn_cond_mask,
             input_concat_cond=input_concat_cond,

@@ -6,8 +6,9 @@ and mixed fp16. Inference code coming soon. **Very experimental at the moment.**
 **Work in progress!**
 
 # TODO
-- [ ] Change training code.
-- [ ] Add generation code.
+- [x] Add training code.
+- [x] Add generation code.
+- [ ] Improve inference demo.
 
 #  Demo 
 In the following we detail training a model for compositional music generation (edit, accompaniments, separation),

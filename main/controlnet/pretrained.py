@@ -12,21 +12,22 @@ from huggingface_hub import hf_hub_download
 
 
 def get_pretrained_controlnet_model(name: str, depth_factor=0.5):
-
-
     model_config_path = hf_hub_download(name, filename="model_config.json", repo_type='model')
 
     with open(model_config_path) as f:
         model_config = json.load(f)
     model_config["model_type"] = "diffusion_cond_controlnet"
-    model_config["model"]["diffusion"]["controlnet_depth_factor"] = depth_factor
+    model_config["model"]["diffusion"]['config']["controlnet_depth_factor"] = depth_factor
     model_config["model"]["diffusion"]["type"] = "dit_controlnet"
 
-    # controlnet_conditioner_config = {"id": "controlnet",
-    #                                  "type": "pretransform",
-    #                                 "config": {"sample_rate": model_config["sample_rate"],
-    #                                            "pretransform_config": model_config["model"]["pretransform"]}}
-    # model_config["model"]['conditioning']['configs'].append(controlnet_conditioner_config)
+    controlnet_conditioner_config = {"id": "audio",
+                                     "type": "pretransform",
+                                     "config": {"sample_rate": model_config["sample_rate"],
+                                                "output_dim": model_config["model"]["pretransform"]["config"]["latent_dim"],
+                                               "pretransform_config": model_config["model"]["pretransform"]}}
+    model_config["model"]['conditioning']['configs'].append(controlnet_conditioner_config)
+
+    model_config["model"]["diffusion"]['controlnet_cond_ids'] = ['audio']
     model = create_model_from_config(model_config)
 
     # Try to download the model.safetensors file first, if it doesn't exist, download the model.ckpt file
@@ -39,10 +40,10 @@ def get_pretrained_controlnet_model(name: str, depth_factor=0.5):
 
     model.load_state_dict(state_dict, strict=False)
     state_dict_controlnet = {k.split('model.model.')[-1]: v for k, v in state_dict.items() if k.startswith('model.model')}
-    model.controlnet.model.load_state_dict(state_dict_controlnet, strict=False)
+    model.model.controlnet.load_state_dict(state_dict_controlnet, strict=False)
 
-    # state_dict_pretransform = {k.split('pretransform.')[-1]: v for k, v in state_dict.items() if k.startswith('pretransform.')}
-    # model.conditioner.conditioners['controlnet']
+    state_dict_pretransform = {k: v for k, v in state_dict.items() if k.startswith('pretransform.')}
+    model.conditioner.conditioners['audio'].load_state_dict(state_dict_pretransform)
 
     return model, model_config
 
@@ -61,7 +62,7 @@ if __name__ == '__main__':
 
     dataset = create_musdb_dataset("../../data/musdb18hq/train.tar",
                                       sample_rate=44100,
-                                      chunk_dur=47.55)
+                                      chunk_dur=47.57)
     dataloader = DataLoader(dataset,
                             batch_size=1,
                             pin_memory=False,
@@ -71,7 +72,7 @@ if __name__ == '__main__':
     data_x, data_y, data_z = next(iter(dataloader))
 
     conditioning = [{
-        # "controlnet": data_y.unsqueeze(1).repeat_interleave(2, dim=1),
+        "audio": data_y.unsqueeze(1).repeat_interleave(2, dim=1).cuda(),
         "prompt": data_z[0],
         "seconds_start": 0,
         "seconds_total": 40
