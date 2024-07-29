@@ -36,7 +36,7 @@ x, y, text = batch
 ...
 # we pass controlnet conditioning with id "audio" in the conditioning dictionary
 output = model(x=noised_inputs, t=t.to(device),
-               cond=model.conditioner([{"prompt": z[0], "seconds_start": 0, "seconds_total": 47.0, "audio": y}],
+               cond=model.conditioner([{"prompt": text, "seconds_start": 0, "seconds_total": 47.0, "audio": y}],
                device=device))
 # compute diffusion loss with output
 ```
@@ -78,7 +78,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add training code.
 - [x] Add generation code.
 - [x] Improve inference demo.
-- [ ] Generalize to inputs other than audio and bs > 1 in demo.
+- [ ] Generalize to inputs other than audio with same structure as $x$
+- [ ] Use bs > 1 in demo.
 
 #  Demo 
 In the following we detail training a model for music source accompaniment generation on MusDB.
