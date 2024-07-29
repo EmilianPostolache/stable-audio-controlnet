@@ -1,9 +1,9 @@
 # Stable Audio ControlNet
 
 Fine-tune Stable Audio Open with DiT ControlNet. On 16GB VRAM GPU you can use adapter of 20% the size of the full DiT with bs=1
-and mixed fp16. Inference code coming soon. **Very experimental at the moment.**
+and mixed fp16. Inference code coming soon. **Very experimental at the moment. Work in progress!**
 
-**Work in progress!**
+
 
 # TODO
 - [x] Add training code.
@@ -11,8 +11,7 @@ and mixed fp16. Inference code coming soon. **Very experimental at the moment.**
 - [ ] Improve inference demo.
 
 #  Demo 
-In the following we detail training a model for compositional music generation (edit, accompaniments, separation),
-on MusDB.
+In the following we detail training a model for music source accompaniment generation on MusDB.
 
 ## Setup
 After installing the requirements copy `.env.tmp` as `.env` and replace with your own variables (example values are random):

@@ -27,8 +27,8 @@ def _fn_extract_stems_and_pad(sample):
     default_sr = [v[1] for k, v in sample.items() if k.endswith(".mp3") or k.endswith(".wav")][0]
     # stem_to_data = ({stem + "_1": F.pad(tensor, (0, max_length - tensor.size(1))) for stem, (tensor, sr) in
     #                 stem_to_data.items()}, default_sr)
-    return ({k.split('.')[0] + "_1" : F.pad(v[0], (0, max_len - v[0].shape[-1]))
-              for k, v in sample.items() if k.endswith(".mp3") or k.endswith(".wav")}, default_sr)
+    return ({k.split('.')[0] : F.pad(v[0], (0, max_len - v[0].shape[-1]))
+              for k, v in sample.items() if (k.endswith(".mp3") or k.endswith(".wav"))}, default_sr)
 
 
 def _get_slices(src, chunk_dur):
@@ -41,8 +41,8 @@ def _get_slices(src, chunk_dur):
         # Pad signals to chunk_size if they are shorter
         if length < chunk_size:
              padding = torch.zeros(channels, chunk_size - length)
-             stems = {stem: (torch.cat([track, padding], dim=-1), stem_type)
-                      for stem, (track, stem_type) in stems}
+             stems = {stem: torch.cat([track, padding], dim=-1)
+                      for stem, track in stems.items()}
              length = chunk_size
 
         max_shift = length - (length // chunk_size) * chunk_size
@@ -59,7 +59,7 @@ def _get_slices(src, chunk_dur):
                           for stem, track in stems.items()}
 
             chunks = {k: v for k, v in chunks.items() if _weights_for_nonzero_refs(v)}
-            if len(chunks) == 0:
+            if len(chunks) < 2 or (len(chunks) == 2 and "vocals" in list(chunks.keys())):
                 continue
 
             yield chunks
@@ -81,25 +81,29 @@ def create_musdb_dataset(
     return dataset
 
 
-def collate_fn_conditional(samples):
-    subsets = [(random.sample(list(range(len(sample))), k=random.randint(1, len(sample))),
-               random.sample(list(range(len(sample))), k=random.randint(1, len(sample)))) for sample in samples]
+def collate_fn_conditional(samples, drop_vocals=True):
+    if drop_vocals:
+        for sample in samples:
+            if 'vocals' in sample:
+                sample.pop('vocals')
+
+    subsets_in = [random.sample(list(range(len(sample))), k=random.randint(1, len(sample) - 1)) for sample in samples]
+    subsets_out = [random.sample(list(set(range(len(samples[i]))) - set(indices)), k=1) for i, indices in enumerate(subsets_in)]
+
 
     xs = []
     ys = []
     zs = []
 
-    default_shape = list(samples[0].values())[0].shape
+    # default_shape = list(samples[0].values())[0].shape
 
-    for subset_pair, sample in zip(subsets, samples):
-        stems = sample
-        stem_keys = list(stems.keys())
-        in_indices, out_indices = subset_pair
+    for i, sample in enumerate(samples):
+        stem_keys = list(sample.keys())
+        in_indices, out_indices = subsets_in[i], subsets_out[i]
         in_stems_prompt = [stem_keys[i] for i in in_indices]
         out_stems_prompt = [stem_keys[i] for i in out_indices]
-        in_track = torch.cat([stems[stem_keys[i]] for i in in_indices], dim=0).sum(dim=0, keepdim=True) #\
-                           #  if in_indices else torch.zeros(default_shape)
-        out_track = torch.cat([stems[stem_keys[i]] for i in out_indices], dim=0).sum(dim=0, keepdim=True)
+        in_track = torch.cat([sample[stem_keys[i]] for i in in_indices], dim=0).sum(dim=0, keepdim=True)
+        out_track = torch.cat([sample[stem_keys[i]] for i in out_indices], dim=0).sum(dim=0, keepdim=True)
         xs.append(out_track)
         ys.append(in_track)
         zs.append(f"in: {', '.join(in_stems_prompt)}; out: {', '.join(out_stems_prompt)}")
@@ -108,14 +112,13 @@ def collate_fn_conditional(samples):
 
 
 if __name__ == '__main__':
-    dataset = create_musdb_dataset("../../data/musdb/train.tar",
+    dataset = create_musdb_dataset("../../data/musdb18hq/train.tar",
                                     sample_rate=16000,
-                                    chunk_dur=10.23)
+                                    chunk_dur=47.57)
     dataloader = DataLoader(dataset,
                             batch_size=2,
                             pin_memory=False,
                             collate_fn=collate_fn_conditional,
                             num_workers=0)
-    data = next(iter(dataloader))
-    print(data)
-    # print(data[1].shape)
+    for batch in dataloader:
+        ...

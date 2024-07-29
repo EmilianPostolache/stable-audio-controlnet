@@ -65,7 +65,7 @@ class Model(pl.LightningModule):
     def step(self, batch):
         x, y, z = batch
         diffusion_input = self.model.pretransform.encode(x.unsqueeze(1).repeat_interleave(2, dim=1))
-        diffusion_y = y.unsqueeze(1).repeat_interleave(2, dim=1)
+        y = y.unsqueeze(1).repeat_interleave(2, dim=1)
 
         # if self.timestep_sampler == "uniform":
         #     # Draw uniformly distributed continuous timesteps
@@ -93,7 +93,7 @@ class Model(pl.LightningModule):
         output = self.model(x=noised_inputs,
                             t=t.to(self.device),
                             cond=self.model.conditioner([{"prompt": z[0], "seconds_start": 0, "seconds_total": 47.0,
-                                                          "audio": diffusion_y}],
+                                                          "audio": y}],
                             device=self.device))
         loss = torch.nn.functional.mse_loss(output, targets).mean()
         return loss
