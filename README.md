@@ -36,8 +36,13 @@ x, y, text = batch
 # obtain noised_input from x at time t
 ...
 # we pass controlnet conditioning with id "audio" in the conditioning dictionary
-output = model(x=noised_inputs, t=t.to(device),
-               cond=model.conditioner([{"prompt": text, "seconds_start": 0, "seconds_total": 47.0, "audio": y}],
+conditioning = [{"audio": y[i:i+1],
+                 "prompt": text[i], 
+                 "seconds_start": 0,
+                 "seconds_total": 47.0} for i in range(y.shape[0])]
+output = model(x=noised_inputs, 
+               t=t.to(device),
+               cond=model.conditioner(conditioning),
                device=device))
 # compute diffusion loss with output
 ```
@@ -46,9 +51,13 @@ For **inference** call for example:
 ```python
 from stable_audio_tools.inference.generation import generate_diffusion_cond
 
+# define conditioning dictionary
+assert batch_size == len(conditioning)
+
 output = generate_diffusion_cond(
                 model,
                 steps=steps,
+                batch_size=batch_size,
                 cfg_scale=7.0,
                 conditioning=conditioning,
                 sample_size=sample_size,
@@ -80,6 +89,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add training code.
 - [x] Add generation code.
 - [x] Improve inference demo.
+- [x] Code working with bs > 0.
+- [ ] Use time conditioning in demo (now conditions in interval [0, 47])
 - [ ] Generalize to inputs other than audio with same structure as $x$
 
 #  Demo 
