@@ -14,7 +14,7 @@ datamodule:
   train_dataset:
     _target_: main.data.dataset_musdb.create_musdb_dataset
     path: null
-    sample_rate:  ${sample_rate}
+    sample_rate: ${sample_rate}
     chunk_dur: ${chunk_dur}
     shardshuffle: True
 
@@ -58,7 +58,7 @@ callbacks:
   audio_samples_logger:
     _target_: main.module_controlnet.SampleLogger
     sampling_steps: [ 100 ]
-    cfg_scale: 7.0
+    cfg_scale: 1.0
     num_samples: 2
 
 loggers:
