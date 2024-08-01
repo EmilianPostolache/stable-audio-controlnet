@@ -199,7 +199,7 @@ class SampleLogger(Callback):
         self.log_next = True
 
     def on_validation_batch_start(
-        self, trainer, pl_module, batch, batch_idx, dataloader_idx
+        self, trainer, pl_module, batch, batch_idx
     ):
         if self.log_next:
             self.log_sample(trainer, pl_module, batch)

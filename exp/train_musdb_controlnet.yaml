@@ -73,9 +73,9 @@ loggers:
 
 trainer:
   _target_: pytorch_lightning.Trainer
-  gpus: 1 # Set `1` to train on GPU, `0` to train on CPU only, and `-1` to train on all GPUs, default `0`
+  devices: 1 # Set `1` to train on GPU, `0` to train on CPU only, and `-1` to train on all GPUs, default `0`
   precision: 16 # Precision used for tensors, default `32`
-  accelerator: null # `ddp` GPUs train individually and sync gradients, default `None`
+  accelerator: gpu # `ddp` GPUs train individually and sync gradients, default `None`
   gradient_clip_val: 1.0
   accumulate_grad_batches: 4
   min_epochs: 0
