@@ -255,6 +255,8 @@ class DiffusionTransformer(nn.Module):
             prepend_cond_mask=None,
             cfg_scale=1.0,
             cfg_dropout_prob=0.0,
+            cfg_cross_attn_dropout_mask=None,
+            cfg_prepend_dropout_mask=None,
             causal=False,
             scale_phi=0.0,
             mask=None,
@@ -275,16 +277,23 @@ class DiffusionTransformer(nn.Module):
         if cfg_dropout_prob > 0.0:
             if cross_attn_cond is not None:
                 null_embed = torch.zeros_like(cross_attn_cond, device=cross_attn_cond.device)
-                dropout_mask = torch.bernoulli(
+                if cfg_cross_attn_dropout_mask is None:
+                    dropout_mask = torch.bernoulli(
                     torch.full((cross_attn_cond.shape[0], 1, 1), cfg_dropout_prob, device=cross_attn_cond.device)).to(
                     torch.bool)
+                else:
+                    dropout_mask = cfg_cross_attn_dropout_mask
                 cross_attn_cond = torch.where(dropout_mask, null_embed, cross_attn_cond)
 
             if prepend_cond is not None:
+                # TODO: handle better prepend_cond
                 null_embed = torch.zeros_like(prepend_cond, device=prepend_cond.device)
-                dropout_mask = torch.bernoulli(
+                if cfg_prepend_dropout_mask is None:
+                    dropout_mask = torch.bernoulli(
                     torch.full((prepend_cond.shape[0], 1, 1), cfg_dropout_prob, device=prepend_cond.device)).to(
                     torch.bool)
+                else:
+                    dropout_mask = cfg_prepend_dropout_mask
                 prepend_cond = torch.where(dropout_mask, null_embed, prepend_cond)
 
         if cfg_scale != 1.0 and (cross_attn_cond is not None or prepend_cond is not None):
@@ -346,11 +355,7 @@ class DiffusionTransformer(nn.Module):
             else:
                 batch_masks = None
 
-            if controlnet_embeds is not None:
-                batch_controlnet_embeds = [torch.cat([controlnet_embed, controlnet_embed], dim=0) for
-                                           controlnet_embed in controlnet_embeds]
-            else:
-                batch_controlnet_embeds = None
+            batch_controlnet_embeds = controlnet_embeds
 
             batch_output = self._forward(
                 batch_inputs,

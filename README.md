@@ -90,7 +90,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add generation code.
 - [x] Improve inference demo.
 - [x] Code working with bs > 0.
-- [ ] Enable CFG.
+- [x] Enable CFG.
+- [ ] Add controlnet conditioning scale.
 - [ ] Generalize to inputs other than audio with same structure as $x$
 - [ ] Use time conditioning in demo (now conditions in interval [0, 47])
 

@@ -256,10 +256,14 @@ class ControlNetDiffusionTransformer(nn.Module):
             cross_attn_cond=None,
             cross_attn_cond_mask=None,
             input_concat_cond=None,
+            negative_cross_attn_cond=None,
+            negative_cross_attn_mask=None,
             global_embed=None,
             prepend_cond=None,
             prepend_cond_mask=None,
             causal=False,
+            cfg_dropout_prob=0.0,
+            cfg_scale=1.0,
             mask=None,
             **kwargs):
 
@@ -273,17 +277,110 @@ class ControlNetDiffusionTransformer(nn.Module):
         if prepend_cond_mask is not None:
             prepend_cond_mask = prepend_cond_mask.bool()
 
-        return self._forward(
-            x,
-            t,
-            controlnet_cond=controlnet_cond,
-            cross_attn_cond=cross_attn_cond,
-            cross_attn_cond_mask=cross_attn_cond_mask,
-            input_concat_cond=input_concat_cond,
-            global_embed=global_embed,
-            prepend_cond=prepend_cond,
-            prepend_cond_mask=prepend_cond_mask,
-            mask=mask,
-            **kwargs
-        )
+        cross_attn_dropout_mask = None
+        prepend_dropout_mask = None
+        if cfg_dropout_prob > 0.0:
+            if cross_attn_cond is not None:
+                null_embed = torch.zeros_like(cross_attn_cond, device=cross_attn_cond.device)
+                cross_attn_dropout_mask = torch.bernoulli(
+                torch.full((cross_attn_cond.shape[0], 1, 1), cfg_dropout_prob, device=cross_attn_cond.device)).to(
+                torch.bool)
+                cross_attn_cond = torch.where(cross_attn_dropout_mask, null_embed, cross_attn_cond)
+
+            # TODO: handle better prepend_cond
+            if prepend_cond is not None:
+                null_embed = torch.zeros_like(prepend_cond, device=prepend_cond.device)
+                prepend_dropout_mask = torch.bernoulli(
+                    torch.full((prepend_cond.shape[0], 1, 1), cfg_dropout_prob, device=prepend_cond.device)).to(
+                   torch.bool)
+                prepend_cond = torch.where(prepend_dropout_mask, null_embed, prepend_cond)
+
+        if cfg_scale != 1.0 and (cross_attn_cond is not None or prepend_cond is not None):
+            # Classifier-free guidance
+            # Concatenate conditioned and unconditioned inputs on the batch dimension
+            batch_inputs = torch.cat([x, x], dim=0)
+            batch_timestep = torch.cat([t, t], dim=0)
+            batch_controlnet_cond = torch.cat([controlnet_cond, controlnet_cond], dim=0)
+
+            if global_embed is not None:
+                batch_global_cond = torch.cat([global_embed, global_embed], dim=0)
+            else:
+                batch_global_cond = None
+
+            if input_concat_cond is not None:
+                batch_input_concat_cond = torch.cat([input_concat_cond, input_concat_cond], dim=0)
+            else:
+                batch_input_concat_cond = None
+
+            batch_cond = None
+            batch_cond_masks = None
+
+            # Handle CFG for cross-attention conditioning
+            if cross_attn_cond is not None:
+
+                null_embed = torch.zeros_like(cross_attn_cond, device=cross_attn_cond.device)
+
+                # For negative cross-attention conditioning, replace the null embed with the negative cross-attention conditioning
+                if negative_cross_attn_cond is not None:
+
+                    # If there's a negative cross-attention mask, set the masked tokens to the null embed
+                    if negative_cross_attn_mask is not None:
+                        negative_cross_attn_mask = negative_cross_attn_mask.to(torch.bool).unsqueeze(2)
+
+                        negative_cross_attn_cond = torch.where(negative_cross_attn_mask, negative_cross_attn_cond,
+                                                               null_embed)
+
+                    batch_cond = torch.cat([cross_attn_cond, negative_cross_attn_cond], dim=0)
+
+                else:
+                    batch_cond = torch.cat([cross_attn_cond, null_embed], dim=0)
+
+                if cross_attn_cond_mask is not None:
+                    batch_cond_masks = torch.cat([cross_attn_cond_mask, cross_attn_cond_mask], dim=0)
+
+            batch_prepend_cond = None
+            batch_prepend_cond_mask = None
+
+            if prepend_cond is not None:
+
+                null_embed = torch.zeros_like(prepend_cond, device=prepend_cond.device)
+
+                batch_prepend_cond = torch.cat([prepend_cond, null_embed], dim=0)
+
+                if prepend_cond_mask is not None:
+                    batch_prepend_cond_mask = torch.cat([prepend_cond_mask, prepend_cond_mask], dim=0)
+
+            if mask is not None:
+                batch_masks = torch.cat([mask, mask], dim=0)
+            else:
+                batch_masks = None
+
+            return self._forward(
+                batch_inputs,
+                batch_timestep,
+                controlnet_cond=batch_controlnet_cond,
+                cross_attn_cond=batch_cond,
+                cross_attn_cond_mask=batch_cond_masks,
+                input_concat_cond=batch_input_concat_cond,
+                global_embed=batch_global_cond,
+                prepend_cond=batch_prepend_cond,
+                prepend_cond_mask=batch_prepend_cond_mask,
+                mask=batch_masks,
+                **kwargs
+            ), cross_attn_dropout_mask, prepend_dropout_mask
+
+        else:
+            return self._forward(
+                x,
+                t,
+                controlnet_cond=controlnet_cond,
+                cross_attn_cond=cross_attn_cond,
+                cross_attn_cond_mask=cross_attn_cond_mask,
+                input_concat_cond=input_concat_cond,
+                global_embed=global_embed,
+                prepend_cond=prepend_cond,
+                prepend_cond_mask=prepend_cond_mask,
+                mask=mask,
+                **kwargs
+            ), cross_attn_dropout_mask, prepend_dropout_mask
 

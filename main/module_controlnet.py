@@ -26,7 +26,8 @@ class Model(pl.LightningModule):
         lr_beta2: float,
         lr_eps: float,
         lr_weight_decay: float,
-        depth_factor: float
+        depth_factor: float,
+        cfg_dropout_prob: float
     ):
         super().__init__()
         self.lr = lr
@@ -42,6 +43,8 @@ class Model(pl.LightningModule):
         self.model_config = model_config
         self.sample_size = model_config["sample_size"]
         self.sample_rate = model_config["sample_rate"]
+
+        self.cfg_dropout_prob = cfg_dropout_prob
 
         self.model = model
         self.model.model.model.requires_grad_(False)
@@ -94,7 +97,8 @@ class Model(pl.LightningModule):
                             t=t.to(self.device),
                             cond=self.model.conditioner([{"prompt": z[i], "seconds_start": 0, "seconds_total": 47.0,
                                                           "audio": y[i:i+1]} for i in range(y.shape[0])],
-                            device=self.device))
+                            device=self.device),
+                            cfg_dropout_prob=self.cfg_dropout_prob)
         loss = torch.nn.functional.mse_loss(output, targets).mean()
         return loss
 

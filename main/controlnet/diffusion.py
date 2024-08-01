@@ -86,7 +86,7 @@ class DiTControlNetWrapper(ConditionedDiffusionModel):
         assert batch_cfg, "batch_cfg must be True for DiTWrapper"
         #assert negative_input_concat_cond is None, "negative_input_concat_cond is not supported for DiTWrapper"
 
-        controlnet_embeds = self.controlnet(x,
+        controlnet_embeds, cfg_cross_attn_dropout_mask, cfg_prepend_dropout_mask = self.controlnet(x,
                                             t,
                                             controlnet_cond=controlnet_cond,
                                             cross_attn_cond=cross_attn_cond,
@@ -95,6 +95,8 @@ class DiTControlNetWrapper(ConditionedDiffusionModel):
                                             prepend_cond=prepend_cond,
                                             prepend_cond_mask=prepend_cond_mask,
                                             global_embed=global_cond,
+                                            cfg_dropout_prob=cfg_dropout_prob,
+                                            cfg_scale=cfg_scale,
                                             **kwargs)
         return self.model(
             x,
@@ -108,6 +110,8 @@ class DiTControlNetWrapper(ConditionedDiffusionModel):
             global_embed=global_cond,
             cfg_scale=cfg_scale,
             cfg_dropout_prob=cfg_dropout_prob,
+            cfg_cross_attn_dropout_mask=cfg_cross_attn_dropout_mask,
+            cfg_prepend_dropout_mask=cfg_prepend_dropout_mask,
             scale_phi=scale_phi,
             **kwargs)
 
