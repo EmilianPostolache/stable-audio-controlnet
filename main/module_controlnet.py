@@ -219,7 +219,7 @@ class SampleLogger(Callback):
             "prompt": z[i],
             "seconds_start": 0,
             "seconds_total": 47.0,
-        } for i in range(self.sampling_steps)
+        } for i in range(self.num_samples)
         ]
 
 
