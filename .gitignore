@@ -9,3 +9,4 @@ wandb/*
 .idea/
 .env
 *.log
+notebook/*

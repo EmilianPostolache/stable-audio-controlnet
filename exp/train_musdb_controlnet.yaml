@@ -32,7 +32,7 @@ datamodule:
     _target_: main.data.dataset_musdb.collate_fn_conditional
     _partial_: True
   drop_last: True
-  num_workers: 1
+  num_workers: 4
   pin_memory: True
   persistent_workers: True
   multiprocessing_context: spawn

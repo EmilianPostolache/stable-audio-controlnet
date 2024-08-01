@@ -117,8 +117,8 @@ if __name__ == '__main__':
                                     chunk_dur=47.57)
     dataloader = DataLoader(dataset,
                             batch_size=2,
-                            pin_memory=False,
+                            pin_memory=True,
                             collate_fn=collate_fn_conditional,
-                            num_workers=0)
+                            num_workers=4)
     for batch in dataloader:
         ...
