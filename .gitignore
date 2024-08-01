@@ -10,3 +10,4 @@ wandb/*
 .env
 *.log
 notebook/*
+script/*

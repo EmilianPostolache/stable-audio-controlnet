@@ -215,6 +215,7 @@ class DiffusionTransformer(nn.Module):
                                       controlnet_embeds=controlnet_embeds,
                                       **extra_args, **kwargs)
         elif self.transformer_type == "continuous_transformer":
+
             output = self.transformer(x, prepend_embeds=prepend_inputs, context=cross_attn_cond,
                                       context_mask=cross_attn_cond_mask, mask=mask, prepend_mask=prepend_mask,
                                       return_info=return_info, controlnet_embeds=controlnet_embeds,
@@ -395,6 +396,7 @@ class DiffusionTransformer(nn.Module):
                 prepend_cond=prepend_cond,
                 prepend_cond_mask=prepend_cond_mask,
                 mask=mask,
+                controlnet_embeds=controlnet_embeds,
                 return_info=return_info,
                 **kwargs
             )

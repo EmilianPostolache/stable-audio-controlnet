@@ -214,17 +214,18 @@ class SampleLogger(Callback):
         _, y, z = batch
         y = torch.clip(y, -1, 1)
 
+        num_samples = min(self.num_samples, y.shape[0])
+
         conditioning = [{
             "audio": y[i:i+1].unsqueeze(1).repeat_interleave(2, dim=1).to(pl_module.device),
             "prompt": z[i],
             "seconds_start": 0,
             "seconds_total": 47.0,
-        } for i in range(self.num_samples)
-        ]
+        } for i in range(num_samples)]
 
 
 
-        for i in range(self.num_samples):
+        for i in range(num_samples):
             log_wandb_audio_batch(
                 logger=wandb_logger,
                 id=f"true_{i}",
@@ -244,7 +245,7 @@ class SampleLogger(Callback):
 
             output = generate_diffusion_cond(
                 pl_module.model,
-                batch_size=self.num_samples,
+                batch_size=num_samples,
                 steps=steps,
                 cfg_scale=7.0,
                 conditioning=conditioning,
@@ -254,7 +255,7 @@ class SampleLogger(Callback):
                 sampler_type="dpmpp-3m-sde",
                 device="cuda"
             )
-            for i in range(self.num_samples):
+            for i in range(num_samples):
                 log_wandb_audio_batch(
                     logger=wandb_logger,
                     id=f"sample_x_{i}",
