@@ -26,8 +26,8 @@ datamodule:
     shardshuffle: False
 
   shuffle_size: 24
-  batch_size_train: 1 
-  batch_size_val: 1 
+  batch_size_train: 2
+  batch_size_val: 2
   collate_fn:
     _target_: main.data.dataset_musdb.collate_fn_conditional
     _partial_: True
@@ -59,7 +59,7 @@ callbacks:
     _target_: main.module_controlnet.SampleLogger
     sampling_steps: [ 100 ]
     cfg_scale: 7.0
-    num_samples: ${datamodule.batch_size_val}
+    num_samples: 2
 
 loggers:
   wandb:

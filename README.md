@@ -1,7 +1,7 @@
 # Stable Audio ControlNet
 
 Fine-tune Stable Audio Open with DiT ControlNet. On 16GB VRAM GPU you can use adapter of 20% the size of the full DiT with bs=1
-and mixed fp16. Inference code coming soon. **Very experimental at the moment. Work in progress!**
+and mixed fp16 (50% with 24GB VRAM GPU). **Very experimental at the moment. Work in progress!**
 
 To initialize ControlNet based on `stable-audio-open` checkpoint, retaining `depth_factor` layers (e.g., `depth_factor` = 0.2 retains 20% of layers
 in DiT, int(0.2 * 24) = 5 layers), call:
@@ -59,6 +59,7 @@ output = generate_diffusion_cond(
         )
 ```
 
+
 # Implementation Details
 
 The ControlNet architecture is implemented by defining two classes (in `diffusion.py`):
@@ -80,7 +81,6 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add generation code.
 - [x] Improve inference demo.
 - [ ] Generalize to inputs other than audio with same structure as $x$
-- [ ] Use bs > 1 in demo.
 
 #  Demo 
 In the following we detail training a model for music source accompaniment generation on MusDB.
@@ -97,6 +97,11 @@ WANDB_PROJECT=audioproject
 WANDB_ENTITY=johndoe
 WANDB_API_KEY=a21dzbqlybbzccqla4txa21dzbqlybbzccqla4tx
 ```
+
+Afterwards, log in on Hugginface with `huggingface-cli login` using personal token in order to be able to download
+Stable Audio Open weights.
+
+For the demo, since we are using `mp3` version of musdb, it is also necessary to have `libsndfile` installed. You can install it with `conda install conda-forge::libsndfile`.
 
 ## Dataset (MusDB18HQ)
 

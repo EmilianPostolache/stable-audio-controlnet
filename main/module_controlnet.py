@@ -92,8 +92,8 @@ class Model(pl.LightningModule):
 
         output = self.model(x=noised_inputs,
                             t=t.to(self.device),
-                            cond=self.model.conditioner([{"prompt": z[0], "seconds_start": 0, "seconds_total": 47.0,
-                                                          "audio": y}],
+                            cond=self.model.conditioner([{"prompt": z[i], "seconds_start": 0, "seconds_total": 47.0,
+                                                          "audio": y[i:i+1]} for i in range(y.shape[0])],
                             device=self.device))
         loss = torch.nn.functional.mse_loss(output, targets).mean()
         return loss
@@ -215,11 +215,13 @@ class SampleLogger(Callback):
         y = torch.clip(y, -1, 1)
 
         conditioning = [{
-            "audio": y.unsqueeze(1).repeat_interleave(2, dim=1).cuda(),
-            "prompt": z[0],
+            "audio": y[i:i+1].unsqueeze(1).repeat_interleave(2, dim=1).to(pl_module.device),
+            "prompt": z[i],
             "seconds_start": 0,
             "seconds_total": 47.0,
-        }]
+        } for i in range(y.shape[0])
+        ]
+
 
 
         for i in range(self.num_samples):
@@ -242,6 +244,7 @@ class SampleLogger(Callback):
 
             output = generate_diffusion_cond(
                 pl_module.model,
+                batch_size=self.num_samples,
                 steps=steps,
                 cfg_scale=7.0,
                 conditioning=conditioning,

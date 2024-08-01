@@ -144,6 +144,7 @@ class DiffusionTransformer(nn.Module):
             global_embed=None,
             prepend_cond=None,
             prepend_cond_mask=None,
+            controlnet_embeds=None,
             return_info=False,
             **kwargs):
 
@@ -211,11 +212,13 @@ class DiffusionTransformer(nn.Module):
         if self.transformer_type == "x-transformers":
             output = self.transformer(x, prepend_embeds=prepend_inputs, context=cross_attn_cond,
                                       context_mask=cross_attn_cond_mask, mask=mask, prepend_mask=prepend_mask,
+                                      controlnet_embeds=controlnet_embeds,
                                       **extra_args, **kwargs)
         elif self.transformer_type == "continuous_transformer":
             output = self.transformer(x, prepend_embeds=prepend_inputs, context=cross_attn_cond,
                                       context_mask=cross_attn_cond_mask, mask=mask, prepend_mask=prepend_mask,
-                                      return_info=return_info, **extra_args, **kwargs)
+                                      return_info=return_info, controlnet_embeds=controlnet_embeds,
+                                      **extra_args, **kwargs)
 
             if return_info:
                 output, info = output
@@ -246,6 +249,7 @@ class DiffusionTransformer(nn.Module):
             input_concat_cond=None,
             global_embed=None,
             negative_global_embed=None,
+            controlnet_embeds=None,
             prepend_cond=None,
             prepend_cond_mask=None,
             cfg_scale=1.0,
@@ -341,6 +345,12 @@ class DiffusionTransformer(nn.Module):
             else:
                 batch_masks = None
 
+            if controlnet_embeds is not None:
+                batch_controlnet_embeds = [torch.cat([controlnet_embed, controlnet_embed], dim=0) for
+                                           controlnet_embed in controlnet_embeds]
+            else:
+                batch_controlnet_embeds = None
+
             batch_output = self._forward(
                 batch_inputs,
                 batch_timestep,
@@ -352,6 +362,7 @@ class DiffusionTransformer(nn.Module):
                 prepend_cond=batch_prepend_cond,
                 prepend_cond_mask=batch_prepend_cond_mask,
                 return_info=return_info,
+                controlnet_embeds=batch_controlnet_embeds,
                 **kwargs)
 
             if return_info:
