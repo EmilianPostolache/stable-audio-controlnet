@@ -67,7 +67,6 @@ output = generate_diffusion_cond(
                 device="cuda"
         )
 ```
-WARNING: At the moment CFG is disabled (cfg_scale = 1.0).
 
 # Implementation Details
 
