@@ -67,7 +67,7 @@ output = generate_diffusion_cond(
                 device="cuda"
         )
 ```
-
+WARNING: At the moment CFG is disabled (cfg_scale = 1.0).
 
 # Implementation Details
 
@@ -90,8 +90,9 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add generation code.
 - [x] Improve inference demo.
 - [x] Code working with bs > 0.
-- [ ] Use time conditioning in demo (now conditions in interval [0, 47])
+- [ ] Enable CFG.
 - [ ] Generalize to inputs other than audio with same structure as $x$
+- [ ] Use time conditioning in demo (now conditions in interval [0, 47])
 
 #  Demo 
 In the following we detail training a model for music source accompaniment generation on MusDB.
