@@ -26,8 +26,8 @@ datamodule:
     shardshuffle: False
 
   shuffle_size: 24
-  batch_size_train: 2
-  batch_size_val: 2
+  batch_size_train: 1
+  batch_size_val: 1
   collate_fn:
     _target_: main.data.dataset_musdb.collate_fn_conditional
     _partial_: True
