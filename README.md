@@ -43,6 +43,7 @@ conditioning = [{"audio": y[i:i+1],
 output = model(x=noised_inputs, 
                t=t.to(device),
                cond=model.conditioner(conditioning),
+               cfg_dropout_prob=cfg_dropout_prob,
                device=device))
 # compute diffusion loss with output
 ```
