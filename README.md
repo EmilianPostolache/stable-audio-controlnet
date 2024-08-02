@@ -3,6 +3,9 @@
 Fine-tune Stable Audio Open with DiT ControlNet. On 16GB VRAM GPU you can use adapter of 20% the size of the full DiT with bs=1
 and mixed fp16 (50% with 24GB VRAM GPU). **Very experimental at the moment. Work in progress!**
 
+  
+![alt text](res/gen.png)
+
 To initialize ControlNet based on `stable-audio-open` checkpoint, retaining `depth_factor` layers (e.g., `depth_factor` = 0.2 retains 20% of layers
 in DiT, int(0.2 * 24) = 5 layers), call:
 
