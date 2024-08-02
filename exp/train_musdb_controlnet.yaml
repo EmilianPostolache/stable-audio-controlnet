@@ -5,7 +5,7 @@ defaults:
 
 train: True
 sample_rate: 44100
-chunk_dur: 47.57
+chunk_dur: 47.55446713
 
 log_every_n_steps: 1000
 

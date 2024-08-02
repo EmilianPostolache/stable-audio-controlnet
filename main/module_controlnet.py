@@ -66,9 +66,9 @@ class Model(pl.LightningModule):
         return optimizer
 
     def step(self, batch):
-        x, y, z = batch
-        diffusion_input = self.model.pretransform.encode(x.unsqueeze(1).repeat_interleave(2, dim=1))
-        y = y.unsqueeze(1).repeat_interleave(2, dim=1)
+        x, y, prompts, start_seconds, total_seconds = batch
+
+        diffusion_input = self.model.pretransform.encode(x)
 
         # if self.timestep_sampler == "uniform":
         #     # Draw uniformly distributed continuous timesteps
@@ -95,7 +95,9 @@ class Model(pl.LightningModule):
 
         output = self.model(x=noised_inputs,
                             t=t.to(self.device),
-                            cond=self.model.conditioner([{"prompt": z[i], "seconds_start": 0, "seconds_total": 47.0,
+                            cond=self.model.conditioner([{"prompt": prompts[i],
+                                                          "seconds_start": start_seconds[i],
+                                                          "seconds_total": total_seconds[i],
                                                           "audio": y[i:i+1]} for i in range(y.shape[0])],
                             device=self.device),
                             cfg_dropout_prob=self.cfg_dropout_prob)
@@ -215,34 +217,33 @@ class SampleLogger(Callback):
         if is_train:
             pl_module.eval()
         wandb_logger = get_wandb_logger(trainer).experiment
-        _, y, z = batch
+        _, y, prompts, start_seconds, total_seconds = batch
         y = torch.clip(y, -1, 1)
 
         num_samples = min(self.num_samples, y.shape[0])
 
         conditioning = [{
-            "audio": y[i:i+1].unsqueeze(1).repeat_interleave(2, dim=1).to(pl_module.device),
-            "prompt": z[i],
-            "seconds_start": 0,
-            "seconds_total": 47.0,
+            "audio": y[i:i+1].to(pl_module.device),
+            "prompt": prompts[i],
+            "seconds_start": start_seconds[i],
+            "seconds_total": total_seconds[i],
         } for i in range(num_samples)]
-
 
 
         for i in range(num_samples):
             log_wandb_audio_batch(
                 logger=wandb_logger,
                 id=f"true_{i}",
-                samples=y[i:i+1].unsqueeze(1),
+                samples=y[i:i+1],
                 sampling_rate=pl_module.sample_rate,
-                caption=f"Prompt: {z[i]}",
+                caption=f"Prompt: {prompts[i]}",
             )
             log_wandb_audio_spectrogram(
                 logger=wandb_logger,
                 id=f"true_{i}",
-                samples=y[i:i+1].unsqueeze(1),
+                samples=y[i:i+1],
                 sampling_rate=pl_module.sample_rate,
-                caption=f"Prompt: {z[i]}",
+                caption=f"Prompt: {prompts[i]}",
             )
 
         for steps in self.sampling_steps:
@@ -263,14 +264,29 @@ class SampleLogger(Callback):
                 log_wandb_audio_batch(
                     logger=wandb_logger,
                     id=f"sample_x_{i}",
-                    samples=torch.tensor(output[i:i + 1]),
+                    samples=output[i:i + 1],
                     sampling_rate=pl_module.sample_rate,
                     caption=f"Sampled in {steps} steps.",
                 )
                 log_wandb_audio_spectrogram(
                     logger=wandb_logger,
                     id=f"sample_x_{i}",
-                    samples=torch.tensor(output[i:i + 1]),
+                    samples=output[i:i + 1],
+                    sampling_rate=pl_module.sample_rate,
+                    caption=f"Sampled in {steps} steps.",
+                )
+
+                log_wandb_audio_batch(
+                    logger=wandb_logger,
+                    id=f"sample_sum_{i}",
+                    samples=output[i:i + 1] + y[i:i+1],
+                    sampling_rate=pl_module.sample_rate,
+                    caption=f"Sampled in {steps} steps.",
+                )
+                log_wandb_audio_spectrogram(
+                    logger=wandb_logger,
+                    id=f"sample_sum_{i}",
+                    samples=output[i:i + 1] + y[i:i+1],
                     sampling_rate=pl_module.sample_rate,
                     caption=f"Sampled in {steps} steps.",
                 )

@@ -51,18 +51,19 @@ def _get_slices(src, chunk_dur):
         for i in range(length // chunk_size):
             start_idx = min(length - chunk_size, i * chunk_size + shift)
             end_idx = start_idx + chunk_size
+            start_s = start_idx / sr
 
             chunks = {stem: track[:, start_idx: end_idx] for stem, track in stems.items()}
 
-            if channels == 2:
-                chunks = {stem: track[:1, start_idx: end_idx] + track[1:, start_idx: end_idx]
-                          for stem, track in stems.items()}
+            # if channels == 2:
+            #     chunks = {stem: track[:1, start_idx: end_idx] + track[1:, start_idx: end_idx]
+            #              for stem, track in stems.items()}
 
-            chunks = {k: v for k, v in chunks.items() if _weights_for_nonzero_refs(v)}
+            chunks = {k: v for k, v in chunks.items() if _weights_for_nonzero_refs(v.sum(dim=0))}
             if len(chunks) < 2 or (len(chunks) == 2 and "vocals" in list(chunks.keys())):
                 continue
 
-            yield chunks
+            yield chunks, start_s, length / sr
 
 def create_musdb_dataset(
         path: str,
@@ -82,6 +83,11 @@ def create_musdb_dataset(
 
 
 def collate_fn_conditional(samples, drop_vocals=True):
+
+    start_seconds = [x for _, x, _ in samples]
+    total_seconds = [x for _, _, x in samples]
+    samples = [x for x, _, _ in samples]
+
     if drop_vocals:
         for sample in samples:
             if 'vocals' in sample:
@@ -91,9 +97,9 @@ def collate_fn_conditional(samples, drop_vocals=True):
     subsets_out = [random.sample(list(set(range(len(samples[i]))) - set(indices)), k=1) for i, indices in enumerate(subsets_in)]
 
 
-    xs = []
-    ys = []
-    zs = []
+    outputs = []
+    inputs = []
+    prompts = []
 
     # default_shape = list(samples[0].values())[0].shape
 
@@ -102,23 +108,23 @@ def collate_fn_conditional(samples, drop_vocals=True):
         in_indices, out_indices = subsets_in[i], subsets_out[i]
         in_stems_prompt = [stem_keys[i] for i in in_indices]
         out_stems_prompt = [stem_keys[i] for i in out_indices]
-        in_track = torch.cat([sample[stem_keys[i]] for i in in_indices], dim=0).sum(dim=0, keepdim=True)
-        out_track = torch.cat([sample[stem_keys[i]] for i in out_indices], dim=0).sum(dim=0, keepdim=True)
-        xs.append(out_track)
-        ys.append(in_track)
-        zs.append(f"in: {', '.join(in_stems_prompt)}; out: {', '.join(out_stems_prompt)}")
+        in_track = torch.stack([sample[stem_keys[i]] for i in in_indices]).sum(dim=0, keepdim=True)
+        out_track = torch.stack([sample[stem_keys[i]] for i in out_indices]).sum(dim=0, keepdim=True)
+        outputs.append(out_track)
+        inputs.append(in_track)
+        prompts.append(f"in: {', '.join(in_stems_prompt)}; out: {', '.join(out_stems_prompt)}")
 
-    return torch.concat(xs), torch.concat(ys), zs
+    return torch.concat(outputs), torch.concat(inputs), prompts, start_seconds, total_seconds
 
 
 if __name__ == '__main__':
     dataset = create_musdb_dataset("../../data/musdb18hq/train.tar",
-                                    sample_rate=16000,
+                                    sample_rate=44100,
                                     chunk_dur=47.57)
     dataloader = DataLoader(dataset,
                             batch_size=2,
                             pin_memory=True,
                             collate_fn=collate_fn_conditional,
-                            num_workers=4)
+                            num_workers=0)
     for batch in dataloader:
-        ...
+        print(batch)

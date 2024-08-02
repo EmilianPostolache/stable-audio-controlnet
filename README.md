@@ -31,15 +31,15 @@ optimizer = torch.optim.AdamW(params, lr)
 During training pass the conditioning audio `y` in the conditioning dictionary 
 
 ```python
-x, y, text = batch
+x, y, prompts, start_seconds, total_seconds = batch
 ...
 # obtain noised_input from x at time t
 ...
 # we pass controlnet conditioning with id "audio" in the conditioning dictionary
 conditioning = [{"audio": y[i:i+1],
-                 "prompt": text[i], 
-                 "seconds_start": 0,
-                 "seconds_total": 47.0} for i in range(y.shape[0])]
+                 "prompt": prompts[i], 
+                 "seconds_start": start_seconds[i],
+                 "seconds_total": total_seconds[i]} for i in range(y.shape[0])]
 output = model(x=noised_inputs, 
                t=t.to(device),
                cond=model.conditioner(conditioning),
@@ -91,9 +91,9 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Improve inference demo.
 - [x] Code working with bs > 0.
 - [x] Enable CFG.
+- [x] Use time conditioning in demo.
 - [ ] Add controlnet conditioning scale.
-- [ ] Generalize to inputs other than audio with same structure as $x$
-- [ ] Use time conditioning in demo (now conditions in interval [0, 47])
+- [ ] Generalize to inputs other than audio.
 
 #  Demo 
 In the following we detail training a model for music source accompaniment generation on MusDB.
