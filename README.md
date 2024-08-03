@@ -8,9 +8,9 @@ and mixed fp16 (50% with 24GB VRAM GPU). **Work in progress!**
 
 Example:
 
-- [Input (Other)](res/track1/input.mov)
-- [Generated (Drums)](res/track1/generated.mov)
-- [Mix](res/track1/mix.mov)
+- [Input (Other)](res/track1/input.wav)
+- [Generated (Drums)](res/track1/generated.wav)
+- [Mix](res/track1/mix.wav)
 
 # Quick start
 To initialize ControlNet based on `stable-audio-open` checkpoint, retaining `depth_factor` layers (e.g., `depth_factor` = 0.2 retains 20% of layers
