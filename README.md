@@ -103,6 +103,7 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Enable CFG.
 - [x] Use time conditioning in demo.
 - [ ] Add controlnet conditioning scale.
+- [ ] Release demo checkpoints.
 - [ ] Generalize to inputs other than audio.
 
 #  Demo 
