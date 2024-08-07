@@ -287,7 +287,6 @@ class ControlNetDiffusionTransformer(nn.Module):
                 torch.bool)
                 cross_attn_cond = torch.where(cross_attn_dropout_mask, null_embed, cross_attn_cond)
 
-            # TODO: handle better prepend_cond
             if prepend_cond is not None:
                 null_embed = torch.zeros_like(prepend_cond, device=prepend_cond.device)
                 prepend_dropout_mask = torch.bernoulli(
