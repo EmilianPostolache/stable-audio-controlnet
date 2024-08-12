@@ -103,7 +103,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Use time conditioning in demo.
 - [x] Add controlnet conditioning scale.
 - [ ] Release demo checkpoints.
-- [ ] Generalize to inputs other than audio.
+- [ ] Add multi-controlnet.
+- [ ] Generalize to inputs other than audio (envelope & chords control).
 
 #  Demo 
 In the following we detail training a model for music source accompaniment generation on MusDB.
