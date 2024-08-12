@@ -99,7 +99,6 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add training code.
 - [x] Add generation code.
 - [x] Improve inference demo.
-- [x] Code working with bs > 0.
 - [x] Enable CFG.
 - [x] Use time conditioning in demo.
 - [x] Add controlnet conditioning scale.
