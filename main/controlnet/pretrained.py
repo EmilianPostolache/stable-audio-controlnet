@@ -25,7 +25,7 @@ def get_pretrained_controlnet_model(name: str,
 
     model_config["model"]["diffusion"]['controlnet_cond_ids'] = []
     for controlnet_type in controlnet_types:
-        if controlnet_type in ["audio", "envelope"]:
+        if controlnet_type in ["audio", "envelope", "chroma"]:
             controlnet_conditioner_config = {"id": controlnet_type,
                                              "type": "pretransform",
                                              "config": {"sample_rate": model_config["sample_rate"],
@@ -49,7 +49,7 @@ def get_pretrained_controlnet_model(name: str,
     model.model.controlnet.load_state_dict(state_dict_controlnet, strict=False)
 
     for controlnet_type in controlnet_types:
-        if controlnet_type in ["audio", "envelope"]:
+        if controlnet_type in ["audio", "envelope", "chroma"]:
             state_dict_pretransform = {k: v for k, v in state_dict.items() if k.startswith('pretransform.')}
             model.conditioner.conditioners[controlnet_type].load_state_dict(state_dict_pretransform)
 

@@ -1,5 +1,6 @@
 # @package _global_
 
+
 train: True
 sample_rate: 44100
 chunk_dur: 47.55446713
@@ -7,7 +8,7 @@ chunk_dur: 47.55446713
 log_every_n_steps: 1000
 
 model:
-  _target_: main.module_controlnet_audio.Model
+  _target_: main.module_controlnet_chroma.Model
   lr: 1e-4
   lr_beta1: 0.95
   lr_beta2: 0.999
@@ -15,9 +16,11 @@ model:
   lr_weight_decay: 1e-3
   cfg_dropout_prob: 0.1
   depth_factor: 0.2
+  rms_window_size: 10000
+  high_pass_cutoff: 261.2
 
 datamodule:
-  _target_: main.module_controlnet_audio.WebDatasetDatamodule
+  _target_: main.module_controlnet_chroma.WebDatasetDatamodule
   train_dataset:
     _target_: main.data.dataset_musdb.create_musdb_dataset
     path: null
@@ -36,7 +39,7 @@ datamodule:
   batch_size_train: 1
   batch_size_val: 1
   collate_fn:
-    _target_: main.data.dataset_musdb.collate_fn_conditional
+    _target_: main.data.dataset_musdb.collate_fn_mix
     _partial_: True
   drop_last: True
   num_workers: 4
@@ -63,7 +66,7 @@ callbacks:
     max_depth: 2
 
   audio_samples_logger:
-    _target_: main.module_controlnet_audio.SampleLogger
+    _target_: main.module_controlnet_chroma.SampleLogger
     sampling_steps: [ 100 ]
     cfg_scale: 7.0
     num_samples: 2
