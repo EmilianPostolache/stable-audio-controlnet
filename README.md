@@ -14,12 +14,12 @@ Example:
 
 # Quick start
 To initialize ControlNet based on `stable-audio-open` checkpoint, retaining `depth_factor` layers (e.g., `depth_factor` = 0.2 retains 20% of layers
-in DiT, int(0.2 * 24) = 5 layers), call:
+in DiT, int(0.2 * 24) = 5 layers), and conditioning on other audio, call:
 
 ```python
 from main.controlnet.pretrained import get_pretrained_controlnet_model
 
-model, model_config = get_pretrained_controlnet_model("stabilityai/stable-audio-open-1.0", depth_factor=0.2)
+model, model_config = get_pretrained_controlnet_model("stabilityai/stable-audio-open-1.0", controlnet_types=["audio"], depth_factor=0.2)
 ```
 
 **For training** first disable training on frozen structures:
@@ -108,7 +108,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [ ] Add F0 or chord ControlNet.
 
 #  Demo 
-In the following we detail training a model for music source accompaniment generation on MusDB.
+In the following we detail training a model for music source accompaniment generation on MusDB (`audio` ControlNet conditioning). Another example with `envelope` control
+is available as well.
 
 ## Setup
 First install the requirements. `torchaudio` has to be installed as the nightly build. You can do it with `pip3 install --pre torchaudio --index-url https://download.pytorch.org/whl/nightly/cu118`.  Afterwards copy `.env.tmp` as `.env` and replace with your own variables (example values are random):
@@ -137,7 +138,7 @@ and put the files `test.tar` and `train.tar` inside `data/musdb18hq/`.
 
 For training run
 ```
-PYTHONUNBUFFERED=1 TAG=musdb-controlnet python train.py exp=train_musdb_controlnet \
+PYTHONUNBUFFERED=1 TAG=musdb-controlnet-audio python train.py exp=train_musdb_controlnet_audio \
 datamodule.train_dataset.path=data/musdb18hq/train.tar \ 
 datamodule.val_dataset.path=data/musdb18hq/test.tar
 ```
