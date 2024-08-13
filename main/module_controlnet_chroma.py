@@ -35,7 +35,8 @@ class Model(pl.LightningModule):
         depth_factor: float,
         cfg_dropout_prob: float,
         rms_window_size: int,
-        high_pass_cutoff: float
+        high_pass_cutoff: float,
+        chromagram_mask_factor: float
     ):
         super().__init__()
         self.lr = lr
@@ -66,7 +67,7 @@ class Model(pl.LightningModule):
         self.model.pretransform.eval()
 
         self.chroma_transform = T.ChromaSpectrogram(sample_rate=self.sample_rate, n_fft=self.sample_rate // 2)
-
+        self.chromagram_mask_factor = chromagram_mask_factor
         # can finetune controlnet embedders if enough VRAM
         # self.model.conditioner.conditioners["chroma"].requires_grad_(True)
         # self.model.conditioner.conditioners["chroma"].train()
@@ -89,7 +90,7 @@ class Model(pl.LightningModule):
         x, prompts, start_seconds, total_seconds = batch
         filtered_waveform = high_pass_filter(x.mean(dim=1), self.sample_rate)  # Apply high-pass filter
         chromagram = self.chroma_transform(filtered_waveform)
-        chromagram_mask = (chromagram > chromagram.mean(dim=[-2, -1]).unsqueeze(-1).unsqueeze(-1)).float()
+        chromagram_mask = (chromagram > self.chromagram_mask_factor * chromagram.mean(dim=[-2, -1]).unsqueeze(-1).unsqueeze(-1)).float()
         chromagram_mask_rescaled = torch.nn.functional.interpolate(chromagram_mask,
                                                                    scale_factor=(self.sample_rate // 4), mode='nearest')
         chromagram_mask_rescaled = chromagram_mask_rescaled[..., :x.shape[-1]]
@@ -246,7 +247,7 @@ class SampleLogger(Callback):
         x = torch.clip(x, -1, 1)
         filtered_waveform = high_pass_filter(x.mean(dim=1), pl_module.sample_rate)  # Apply high-pass filter
         chromagram = pl_module.chroma_transform(filtered_waveform)
-        chromagram_mask = (chromagram > chromagram.mean(dim=[-2, -1]).unsqueeze(-1).unsqueeze(-1)).float()
+        chromagram_mask = (chromagram > pl_module.chromagram_mask_factor * chromagram.mean(dim=[-2, -1]).unsqueeze(-1).unsqueeze(-1)).float()
         chromagram_mask_rescaled = torch.nn.functional.interpolate(chromagram_mask,
                                                                    scale_factor=(pl_module.sample_rate // 4,),
                                                                    mode='nearest')

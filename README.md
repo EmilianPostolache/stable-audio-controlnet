@@ -111,6 +111,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 In the following we detail training a model for music source accompaniment generation on MusDB (`audio` ControlNet conditioning). Another example with `envelope`
 (filtered RMS envelope) and `chroma` (chromogram mask for pitch control) controls are available as well.
 
+![alt text](res/chromagram.png)
+
 ## Setup
 First install the requirements. `torchaudio` has to be installed as the nightly build. You can do it with `pip3 install --pre torchaudio --index-url https://download.pytorch.org/whl/nightly/cu118`.  Afterwards copy `.env.tmp` as `.env` and replace with your own variables (example values are random):
 

@@ -18,6 +18,7 @@ model:
   depth_factor: 0.2
   rms_window_size: 10000
   high_pass_cutoff: 261.2
+  chromagram_mask_factor: 1.5
 
 datamodule:
   _target_: main.module_controlnet_chroma.WebDatasetDatamodule
