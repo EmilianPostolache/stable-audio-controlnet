@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - model: controlnet
+  - model: controlnet_envelope
 
 train: True
 sample_rate: 44100
@@ -10,7 +10,7 @@ chunk_dur: 47.55446713
 log_every_n_steps: 1000
 
 datamodule:
-  _target_: main.module_controlnet.WebDatasetDatamodule
+  _target_: main.module_controlnet_envelope.WebDatasetDatamodule
   train_dataset:
     _target_: main.data.dataset_musdb.create_musdb_dataset
     path: null
@@ -29,7 +29,7 @@ datamodule:
   batch_size_train: 1
   batch_size_val: 1
   collate_fn:
-    _target_: main.data.dataset_musdb.collate_fn_conditional
+    _target_: main.data.dataset_musdb.collate_fn_mix
     _partial_: True
   drop_last: True
   num_workers: 4
@@ -56,7 +56,7 @@ callbacks:
     max_depth: 2
 
   audio_samples_logger:
-    _target_: main.module_controlnet.SampleLogger
+    _target_: main.module_controlnet_envelope.SampleLogger
     sampling_steps: [ 100 ]
     cfg_scale: 7.0
     num_samples: 2

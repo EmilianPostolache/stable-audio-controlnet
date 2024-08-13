@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 import torch
 from stable_audio_tools.inference.generation import generate_diffusion_cond
@@ -11,7 +12,9 @@ from huggingface_hub import hf_hub_download
 
 
 
-def get_pretrained_controlnet_model(name: str, depth_factor=0.5):
+def get_pretrained_controlnet_model(name: str,
+                                    controlnet_types : List[str],
+                                    depth_factor=0.5):
     model_config_path = hf_hub_download(name, filename="model_config.json", repo_type='model')
 
     with open(model_config_path) as f:
@@ -20,14 +23,17 @@ def get_pretrained_controlnet_model(name: str, depth_factor=0.5):
     model_config["model"]["diffusion"]['config']["controlnet_depth_factor"] = depth_factor
     model_config["model"]["diffusion"]["type"] = "dit_controlnet"
 
-    controlnet_conditioner_config = {"id": "audio",
-                                     "type": "pretransform",
-                                     "config": {"sample_rate": model_config["sample_rate"],
-                                                "output_dim": model_config["model"]["pretransform"]["config"]["latent_dim"],
-                                               "pretransform_config": model_config["model"]["pretransform"]}}
-    model_config["model"]['conditioning']['configs'].append(controlnet_conditioner_config)
+    model_config["model"]["diffusion"]['controlnet_cond_ids'] = []
+    for controlnet_type in controlnet_types:
+        if controlnet_type in ["audio", "envelope"]:
+            controlnet_conditioner_config = {"id": controlnet_type,
+                                             "type": "pretransform",
+                                             "config": {"sample_rate": model_config["sample_rate"],
+                                                        "output_dim": model_config["model"]["pretransform"]["config"]["latent_dim"],
+                                                       "pretransform_config": model_config["model"]["pretransform"]}}
+            model_config["model"]['conditioning']['configs'].append(controlnet_conditioner_config)
+            model_config["model"]["diffusion"]['controlnet_cond_ids'].append(controlnet_type)
 
-    model_config["model"]["diffusion"]['controlnet_cond_ids'] = ['audio']
     model = create_model_from_config(model_config)
 
     # Try to download the model.safetensors file first, if it doesn't exist, download the model.ckpt file
@@ -42,8 +48,10 @@ def get_pretrained_controlnet_model(name: str, depth_factor=0.5):
     state_dict_controlnet = {k.split('model.model.')[-1]: v for k, v in state_dict.items() if k.startswith('model.model')}
     model.model.controlnet.load_state_dict(state_dict_controlnet, strict=False)
 
-    state_dict_pretransform = {k: v for k, v in state_dict.items() if k.startswith('pretransform.')}
-    model.conditioner.conditioners['audio'].load_state_dict(state_dict_pretransform)
+    for controlnet_type in controlnet_types:
+        if controlnet_type in ["audio", "envelope"]:
+            state_dict_pretransform = {k: v for k, v in state_dict.items() if k.startswith('pretransform.')}
+            model.conditioner.conditioners[controlnet_type].load_state_dict(state_dict_pretransform)
 
     return model, model_config
 

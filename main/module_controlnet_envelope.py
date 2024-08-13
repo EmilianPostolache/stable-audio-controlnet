@@ -14,6 +14,17 @@ from torch.utils.data import DataLoader
 from main.utils import log_wandb_audio_batch, log_wandb_audio_spectrogram
 
 
+def window_rms(x, window_size):
+    padding_size = window_size - 1
+    x2 = torch.nn.functional.pad(x ** 2, (padding_size, 0), mode='constant', value=0)
+    window = torch.ones(x2.shape[1], 1, window_size, device=x2.device) / float(window_size)
+    rms_envelope = torch.sqrt(torch.nn.functional.conv1d(x2, window, stride=1, groups=x2.shape[1]))
+    return rms_envelope
+
+def low_pass_filter(x, window_size):
+    low_pass_kernel = torch.ones(x.shape[1], 1, window_size, device=x.device) / window_size
+    filtered_signal = torch.nn.functional.conv1d(x, low_pass_kernel, stride=1, padding=window_size // 2, groups=x.shape[1])
+    return filtered_signal
 
 
 """ Model """
@@ -27,7 +38,9 @@ class Model(pl.LightningModule):
         lr_eps: float,
         lr_weight_decay: float,
         depth_factor: float,
-        cfg_dropout_prob: float
+        cfg_dropout_prob: float,
+        rms_window_size: int,
+        low_pass_widow_size: int
     ):
         super().__init__()
         self.lr = lr
@@ -36,9 +49,13 @@ class Model(pl.LightningModule):
         self.lr_eps = lr_eps
         self.lr_weight_decay = lr_weight_decay
 
+        self.rms_window_size = rms_window_size
+        self.low_pass_window_size = low_pass_widow_size
+
         self.timestep_sampler = "logit_normal"
         self.diffusion_objective = "v"
         model, model_config = get_pretrained_controlnet_model("stabilityai/stable-audio-open-1.0",
+                                                              controlnet_types=["envelope"],
                                                               depth_factor=depth_factor)
         self.model_config = model_config
         self.sample_size = model_config["sample_size"]
@@ -53,9 +70,15 @@ class Model(pl.LightningModule):
         self.model.pretransform.requires_grad_(False)
         self.model.pretransform.eval()
 
+        # can finetune controlnet embedders if enough VRAM
+        # self.model.conditioner.conditioners["envelope"].requires_grad_(True)
+        # self.model.conditioner.conditioners["envelope"].train()
+
 
     def configure_optimizers(self):
-        params = list(self.model.model.controlnet.parameters())
+        # can finetune controlnet embedders if enough VRAM
+        params = list(self.model.model.controlnet.parameters()) # +
+                  # list(self.model.conditioner.conditioners["envelope"].parameters()))
         optimizer = torch.optim.AdamW(
             params,
             lr=self.lr,
@@ -66,8 +89,9 @@ class Model(pl.LightningModule):
         return optimizer
 
     def step(self, batch):
-        x, y, prompts, start_seconds, total_seconds = batch
-
+        x, prompts, start_seconds, total_seconds = batch
+        rms_envelope = window_rms(x, window_size=self.rms_window_size)
+        filtered_envelope = low_pass_filter(rms_envelope, window_size=self.low_pass_window_size)
         diffusion_input = self.model.pretransform.encode(x)
 
         # if self.timestep_sampler == "uniform":
@@ -98,7 +122,7 @@ class Model(pl.LightningModule):
                             cond=self.model.conditioner([{"prompt": prompts[i],
                                                           "seconds_start": start_seconds[i],
                                                           "seconds_total": total_seconds[i],
-                                                          "audio": y[i:i+1]} for i in range(y.shape[0])],
+                                                          "envelope": filtered_envelope[i:i+1]} for i in range(x.shape[0])],
                             device=self.device),
                             cfg_dropout_prob=self.cfg_dropout_prob)
         loss = torch.nn.functional.mse_loss(output, targets).mean()
@@ -217,13 +241,15 @@ class SampleLogger(Callback):
         if is_train:
             pl_module.eval()
         wandb_logger = get_wandb_logger(trainer).experiment
-        _, y, prompts, start_seconds, total_seconds = batch
-        y = torch.clip(y, -1, 1)
+        x, prompts, start_seconds, total_seconds = batch
+        x = torch.clip(x, -1, 1)
+        rms_envelope = window_rms(x, window_size=pl_module.rms_window_size)
+        filtered_envelope = low_pass_filter(rms_envelope, window_size=pl_module.low_pass_window_size)
 
-        num_samples = min(self.num_samples, y.shape[0])
+        num_samples = min(self.num_samples, x.shape[0])
 
         conditioning = [{
-            "audio": y[i:i+1].to(pl_module.device),
+            "envelope": filtered_envelope[i:i+1].to(pl_module.device),
             "prompt": prompts[i],
             "seconds_start": start_seconds[i],
             "seconds_total": total_seconds[i],
@@ -234,17 +260,20 @@ class SampleLogger(Callback):
             log_wandb_audio_batch(
                 logger=wandb_logger,
                 id=f"true_{i}",
-                samples=y[i:i+1],
+                samples=x[i:i+1],
                 sampling_rate=pl_module.sample_rate,
                 caption=f"Prompt: {prompts[i]}",
             )
             log_wandb_audio_spectrogram(
                 logger=wandb_logger,
                 id=f"true_{i}",
-                samples=y[i:i+1],
+                samples=x[i:i+1],
                 sampling_rate=pl_module.sample_rate,
                 caption=f"Prompt: {prompts[i]}",
             )
+
+            # TODO: log envelope plot
+
 
         for steps in self.sampling_steps:
 
@@ -272,21 +301,6 @@ class SampleLogger(Callback):
                     logger=wandb_logger,
                     id=f"sample_x_{i}",
                     samples=output[i:i + 1],
-                    sampling_rate=pl_module.sample_rate,
-                    caption=f"Sampled in {steps} steps.",
-                )
-
-                log_wandb_audio_batch(
-                    logger=wandb_logger,
-                    id=f"sample_sum_{i}",
-                    samples=output[i:i + 1] + y[i:i+1],
-                    sampling_rate=pl_module.sample_rate,
-                    caption=f"Sampled in {steps} steps.",
-                )
-                log_wandb_audio_spectrogram(
-                    logger=wandb_logger,
-                    id=f"sample_sum_{i}",
-                    samples=output[i:i + 1] + y[i:i+1],
                     sampling_rate=pl_module.sample_rate,
                     caption=f"Sampled in {steps} steps.",
                 )

@@ -1,7 +1,7 @@
 # @package _global_
 
 model:
-  _target_: main.module_controlnet.Model
+  _target_: main.module_controlnet_audio.Model
   lr: 1e-4
   lr_beta1: 0.95
   lr_beta2: 0.999

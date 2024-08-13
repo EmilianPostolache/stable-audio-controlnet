@@ -101,8 +101,6 @@ def collate_fn_conditional(samples, drop_vocals=True):
     inputs = []
     prompts = []
 
-    # default_shape = list(samples[0].values())[0].shape
-
     for i, sample in enumerate(samples):
         stem_keys = list(sample.keys())
         in_indices, out_indices = subsets_in[i], subsets_out[i]
@@ -116,6 +114,27 @@ def collate_fn_conditional(samples, drop_vocals=True):
 
     return torch.concat(outputs), torch.concat(inputs), prompts, start_seconds, total_seconds
 
+def collate_fn_mix(samples, drop_vocals=True):
+    start_seconds = [x for _, x, _ in samples]
+    total_seconds = [x for _, _, x in samples]
+    samples = [x for x, _, _ in samples]
+
+    if drop_vocals:
+        for sample in samples:
+            if 'vocals' in sample:
+                sample.pop('vocals')
+
+    outputs = []
+    prompts = []
+
+    for i, sample in enumerate(samples):
+        stem_keys = list(sample.keys())
+        out_track = torch.stack(list(sample.values())).sum(dim=0, keepdim=True)
+        outputs.append(out_track)
+        prompts.append(f"out: {', '.join(stem_keys)}")
+
+    return torch.concat(outputs), prompts, start_seconds, total_seconds
+
 
 if __name__ == '__main__':
     dataset = create_musdb_dataset("../../data/musdb18hq/train.tar",
@@ -124,7 +143,7 @@ if __name__ == '__main__':
     dataloader = DataLoader(dataset,
                             batch_size=2,
                             pin_memory=True,
-                            collate_fn=collate_fn_conditional,
+                            collate_fn=collate_fn_mix,
                             num_workers=0)
     for batch in dataloader:
         print(batch)

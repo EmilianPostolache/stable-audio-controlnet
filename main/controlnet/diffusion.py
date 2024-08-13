@@ -81,7 +81,8 @@ class DiTControlNetWrapper(ConditionedDiffusionModel):
                 cfg_scale: float = 1.0,
                 cfg_dropout_prob: float = 0.0,
                 scale_phi: float = 0.0,
-                scale_controlnet: float = 1.0,
+                scale_controlnet_embeds: float = 1.0,
+                scale_controlnet_cond: float = 1.0,
                 **kwargs):
 
         assert batch_cfg, "batch_cfg must be True for DiTWrapper"
@@ -89,7 +90,7 @@ class DiTControlNetWrapper(ConditionedDiffusionModel):
 
         controlnet_embeds, cfg_cross_attn_dropout_mask, cfg_prepend_dropout_mask = self.controlnet(x,
                                             t,
-                                            controlnet_cond=controlnet_cond,
+                                            controlnet_cond=scale_controlnet_cond * controlnet_cond,
                                             cross_attn_cond=cross_attn_cond,
                                             cross_attn_cond_mask=cross_attn_mask,
                                             input_concat_cond=input_concat_cond,
@@ -99,7 +100,7 @@ class DiTControlNetWrapper(ConditionedDiffusionModel):
                                             cfg_dropout_prob=cfg_dropout_prob,
                                             cfg_scale=cfg_scale,
                                             **kwargs)
-        controlnet_embeds = [controlnet_embed * scale_controlnet for controlnet_embed in controlnet_embeds]
+        controlnet_embeds = [controlnet_embed * scale_controlnet_embeds for controlnet_embed in controlnet_embeds]
 
         return self.model(
             x,
