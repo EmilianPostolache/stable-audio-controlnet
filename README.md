@@ -155,6 +155,14 @@ TODO
 
 Checkpoints for audio conditioned ControlNet trained on MusDB (0.5 DiT): https://drive.google.com/drive/folders/1-EcM7RWDbLLULrcURZBFSkginaJtq_Zv?usp=sharing
 
+For resuming training with `checkpoint.ckpt` stored in `checkpoint_path` run:
+```
+PYTHONUNBUFFERED=1 TAG=musdb-controlnet-audio python train.py exp=train_musdb_controlnet_audio \
+datamodule.train_dataset.path=data/musdb18hq/train.tar \ 
+datamodule.val_dataset.path=data/musdb18hq/test.tar \
++ckpt=checkpoint_path/checkpoint.ckpt
+```
+
 # Credits
 
 - Evans, Z., Parker, J. D., Carr, C. J., Zukowski, Z., Taylor, J., & Pons, J. (2024). Stable Audio Open. arXiv preprint arXiv:2407.14358.
