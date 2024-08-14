@@ -104,6 +104,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add input and embeds ControlNet conditioning scales.
 - [x] Add envelope ControlNet.
 - [x] Add chromagram mask ControlNet.
+- [ ] Check if frozen embed conditioning for envelope and chromagram is working.
+- [ ] Add inference jupyter for checkpoints.
 - [ ] Release demo checkpoints.
 - [ ] Add multi ControlNet.
 
@@ -145,8 +147,17 @@ datamodule.train_dataset.path=data/musdb18hq/train.tar \
 datamodule.val_dataset.path=data/musdb18hq/test.tar
 ```
 
+## Inference Notebook
+
+TODO
+
+## Checkpoints
+
+Checkpoints for audio conditioned ControlNet trained on MusDB (0.5 DiT): https://drive.google.com/drive/folders/1-EcM7RWDbLLULrcURZBFSkginaJtq_Zv?usp=sharing
+
 # Credits
 
 - Evans, Z., Parker, J. D., Carr, C. J., Zukowski, Z., Taylor, J., & Pons, J. (2024). Stable Audio Open. arXiv preprint arXiv:2407.14358.
 - Zhang, L., Rao, A., & Agrawala, M. (2023). Adding conditional control to text-to-image diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vision (pp. 3836-3847).
+- Wu, S. L., Donahue, C., Watanabe, S., & Bryan, N. J. (2024). Music controlnet: Multiple time-varying controls for music generation. IEEE/ACM Transactions on Audio, Speech, and Language Processing, 32, 2692-2703.
 - Chen, J., Wu, Y., Luo, S., Xie, E., Paul, S., Luo, P., ... & Li, Z. (2024). Pixart-{\delta}: Fast and controllable image generation with latent consistency models. arXiv preprint arXiv:2401.05252.
