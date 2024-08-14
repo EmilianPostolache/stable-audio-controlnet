@@ -1,7 +1,7 @@
 # Stable Audio ControlNet
 
 Fine-tune Stable Audio Open with DiT ControlNet. On 16GB VRAM GPU you can use adapter of 20% the size of the full DiT with bs=1
-and mixed fp16 (50% with 24GB VRAM GPU). **Work in progress!**
+and mixed fp16 (50% with 24GB VRAM GPU). **Work in progress, code is provided as-is!**
 
   
 ![alt text](res/gen.png)
