@@ -104,10 +104,10 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add input and embeds ControlNet conditioning scales.
 - [x] Add envelope ControlNet.
 - [x] Add chromagram mask ControlNet.
+- [x] Release demo checkpoints.
 - [ ] Check if frozen embed conditioning for envelope and chromagram is working.
 - [ ] Add inference jupyter for checkpoints.
-- [ ] Release demo checkpoints.
-- [ ] Add multi ControlNet.
+- [ ] Add multi ControlNet with random masking training.
 
 #  Demo 
 In the following we detail training a model for music source accompaniment generation on MusDB (`audio` ControlNet conditioning). Another examples with `envelope`
