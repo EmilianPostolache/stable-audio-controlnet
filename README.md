@@ -108,8 +108,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [ ] Add multi ControlNet.
 
 #  Demo 
-In the following we detail training a model for music source accompaniment generation on MusDB (`audio` ControlNet conditioning). Another example with `envelope`
-(filtered RMS envelope) and `chroma` (chromogram mask for pitch control) controls are available as well.
+In the following we detail training a model for music source accompaniment generation on MusDB (`audio` ControlNet conditioning). Another examples with `envelope`
+(filtered RMS envelope) and `chroma` (chromogram mask for pitch control) controls are available as well, **but very experimental (not tested yet!)**
 
 ![alt text](res/chromagram.png)
 
