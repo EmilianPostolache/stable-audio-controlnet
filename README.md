@@ -105,8 +105,8 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add envelope ControlNet.
 - [x] Add chromagram mask ControlNet.
 - [x] Release demo checkpoints.
+- [x] Add inference jupyter for checkpoints.
 - [ ] Check if frozen embed conditioning for envelope and chromagram is working.
-- [ ] Add inference jupyter for checkpoints.
 - [ ] Add multi ControlNet with random masking training.
 
 #  Demo 
