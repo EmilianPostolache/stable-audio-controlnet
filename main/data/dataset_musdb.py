@@ -96,7 +96,6 @@ def collate_fn_conditional(samples, drop_vocals=True):
     subsets_in = [random.sample(list(range(len(sample))), k=random.randint(1, len(sample) - 1)) for sample in samples]
     subsets_out = [random.sample(list(set(range(len(samples[i]))) - set(indices)), k=1) for i, indices in enumerate(subsets_in)]
 
-
     outputs = []
     inputs = []
     prompts = []
@@ -117,7 +116,7 @@ def collate_fn_conditional(samples, drop_vocals=True):
 def collate_fn_mix(samples, drop_vocals=True):
     start_seconds = [x for _, x, _ in samples]
     total_seconds = [x for _, _, x in samples]
-    samples = [x for x, _, _ in samples]
+    samples       = [x for x, _, _ in samples]
 
     if drop_vocals:
         for sample in samples:

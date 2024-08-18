@@ -1,0 +1,93 @@
+# @package _global_
+
+train: True
+sample_rate: 44100
+chunk_dur: 47.55446713
+
+log_every_n_steps: 1000
+
+model:
+  _target_: main.module_controlnet_audio.Model
+  lr: 1e-4
+  lr_beta1: 0.95
+  lr_beta2: 0.999
+  lr_eps: 1e-6
+  lr_weight_decay: 1e-3
+  cfg_dropout_prob: 0.1
+  depth_factor: 0.2
+
+datamodule:
+  _target_: main.module_controlnet_audio.WebDatasetDatamodule
+  train_dataset:
+    _target_: main.data.dataset_moisesdb.create_moisesdb_dataset
+    path: null
+    sample_rate: ${sample_rate}
+    chunk_dur: ${chunk_dur}
+    shardshuffle: True
+
+  val_dataset:
+    _target_: main.data.dataset_moisesdb.create_moisesdb_dataset
+    path: null
+    sample_rate: ${sample_rate}
+    chunk_dur: ${chunk_dur}
+    shardshuffle: False
+
+  shuffle_size: 24
+  batch_size_train: 1
+  batch_size_val: 1
+  collate_fn:
+    _target_: main.data.dataset_moisesdb.collate_fn_conditional
+    _partial_: True
+  drop_last: True
+  num_workers: 4
+  pin_memory: True
+  persistent_workers: True
+  multiprocessing_context: spawn
+
+callbacks:
+  rich_progress_bar:
+    _target_: pytorch_lightning.callbacks.RichProgressBar
+
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "valid_loss"   # name of the logged metric which determines when model is improving
+    save_top_k: 1           # save k best models (determined by above metric)
+    save_last: True         # additionaly always save model from last epoch
+    mode: "min"             # can be "max" or "min"
+    verbose: False
+    dirpath: ${logs_dir}/ckpts/${oc.env:TAG}_${now:%Y-%m-%d-%H-%M-%S}
+    filename: '{epoch:02d}-{valid_loss:.3f}'
+
+  model_summary:
+    _target_: pytorch_lightning.callbacks.RichModelSummary
+    max_depth: 2
+
+  audio_samples_logger:
+    _target_: main.module_controlnet_audio.SampleLogger
+    sampling_steps: [ 100 ]
+    cfg_scale: 7.0
+    num_samples: 2
+
+loggers:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    project: ${oc.env:WANDB_PROJECT}
+    entity: ${oc.env:WANDB_ENTITY}
+    # offline: False  # set True to store all logs only locally
+    job_type: "train"
+    group: ""
+    save_dir: ${logs_dir}
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  devices: 1 # Set `1` to train on GPU, `0` to train on CPU only, and `-1` to train on all GPUs, default `0`
+  precision: 16 # Precision used for tensors, default `32`
+  accelerator: gpu # `ddp` GPUs train individually and sync gradients, default `None`
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 4
+  min_epochs: 0
+  max_epochs: -1
+  enable_model_summary: False
+  log_every_n_steps: 1 # Logs metrics every N batches
+  check_val_every_n_epoch: null
+  val_check_interval: ${log_every_n_steps}
