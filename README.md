@@ -147,21 +147,26 @@ datamodule.train_dataset.path=data/musdb18hq/train.tar \
 datamodule.val_dataset.path=data/musdb18hq/test.tar
 ```
 
-## Inference Notebook
-
-TODO
-
-## Checkpoints
-
-Checkpoints for audio conditioned ControlNet trained on MusDB (0.5 DiT): https://drive.google.com/drive/folders/1-EcM7RWDbLLULrcURZBFSkginaJtq_Zv?usp=sharing
-
-For resuming training with `checkpoint.ckpt` stored in `checkpoint_path` run:
+For resuming training with `checkpoint.ckpt` stored in `ckpts` run:
 ```
 PYTHONUNBUFFERED=1 TAG=musdb-controlnet-audio python train.py exp=train_musdb_controlnet_audio \
 datamodule.train_dataset.path=data/musdb18hq/train.tar \ 
 datamodule.val_dataset.path=data/musdb18hq/test.tar \
-+ckpt=checkpoint_path/checkpoint.ckpt
++ckpt=ckpts/checkpoint.ckpt
 ```
+
+## Inference
+
+### Pre-trained checkpoints
+
+Checkpoints for audio conditioned ControlNet trained on MusDB (0.5 DiT): https://drive.google.com/drive/folders/1-EcM7RWDbLLULrcURZBFSkginaJtq_Zv?usp=sharing
+They correspond to `exp/train_musdb_controlnet_audio_large.yaml` configuration.
+
+### Inference Notebook
+
+In notebook you can run `inference_musdb_audio_large.ipynb` for performing inference with the checkpoints above. The notebook
+expects the checkpoints to be found in folder `ckpts/musdb-audio`. Inference can be performed with a 16GB VRAM GPU.
+
 
 # Credits
 
