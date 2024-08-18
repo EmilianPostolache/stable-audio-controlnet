@@ -164,8 +164,8 @@ They correspond to `exp/train_musdb_controlnet_audio_large.yaml` configuration.
 
 ### Inference Notebook
 
-In notebook you can run `inference_musdb_audio_large.ipynb` for performing inference with the checkpoints above. The notebook
-expects the checkpoints to be found in folder `ckpts/musdb-audio`. Inference can be performed with a 16GB VRAM GPU.
+You can run `notebook/inference_musdb_audio_large.ipynb` for performing inference with the above checkpoints. The notebook
+expects the checkpoints to be found in the folder `ckpts/musdb-audio`. Inference can be performed with a 16GB VRAM GPU.
 
 
 # Credits
