@@ -9,5 +9,6 @@ wandb/*
 .idea/
 .env
 *.log
-notebook/*
 script/*
+ckpts/*
+notebook/out
