@@ -6,11 +6,17 @@ and mixed fp16 (50% with 24GB VRAM GPU). **Work in progress, code is provided as
   
 ![alt text](res/gen.png)
 
-Example:
+Example 1 (MoisesDB model):
 
-- [Input (Other)](res/track1/input.wav)
-- [Generated (Drums)](res/track1/generated.wav)
-- [Mix](res/track1/mix.wav)
+- [Input (Guitar, Bass)](res/track_moisesdb/input.wav)
+- [Generated (Piano)](res/track_moisesdb/generated.wav)
+- [Mix](res/track_moisesdb/mix.wav)
+
+Example 2 (MusDB model):
+
+- [Input (Other)](res/track_musdb/input.wav)
+- [Generated (Drums)](res/track_musdb/generated.wav)
+- [Mix](res/track_musdb/mix.wav)
 
 # Quick start
 To initialize ControlNet based on `stable-audio-open` checkpoint, retaining `depth_factor` layers (e.g., `depth_factor` = 0.2 retains 20% of layers
@@ -104,8 +110,9 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add input and embeds ControlNet conditioning scales.
 - [x] Add envelope ControlNet.
 - [x] Add chromagram mask ControlNet.
-- [x] Release demo checkpoints.
+- [x] Release demo checkpoints (MusDB).
 - [x] Add inference jupyter for checkpoints.
+- [ ] Release demo checkpoints (MoisesDB).
 - [ ] Check if frozen embed conditioning for envelope and chromagram is working.
 - [ ] Add multi ControlNet with random masking training.
 
