@@ -113,12 +113,13 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Release demo checkpoints (MusDB).
 - [x] Add inference jupyter for checkpoints.
 - [ ] Release demo checkpoints (MoisesDB).
-- [ ] Check if frozen embed conditioning for envelope and chromagram is working.
+- [ ] Frozen embed conditioning with envelope working. 
+- [ ] Check if frozen embed conditioning for chromagram is working.
 - [ ] Add multi ControlNet with random masking training.
 
 #  Demo 
 In the following we detail training a model for music source accompaniment generation on MusDB (`audio` ControlNet conditioning). Another examples with `envelope`
-(filtered RMS envelope) and `chroma` (chromogram mask for pitch control) controls are available as well, **but very experimental (not tested yet!)**
+(filtered RMS envelope) and `chroma` (chromogram mask for pitch control) controls are available as well. Audio and envelope are tested and working well. Chroma control needs experimental confirmation.
 
 ![alt text](res/chromagram.png)
 
