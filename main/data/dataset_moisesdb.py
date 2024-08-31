@@ -71,7 +71,7 @@ def _get_slices(src, chunk_dur):
             # we drop stem type for now
             chunks = {stem: track[:, start_idx: end_idx]
                       for stem, (track, stem_type) in stems.items() if _weights_for_nonzero_refs(track)}
-            if len(chunks) < 2:
+            if len(chunks) < 2 and all([ k.startswith('vocals') for k in chunks.keys()]):
                 continue
             if channels == 1:
                 chunks = {stem: track.repeat_interleave(2,0) for stem, track in chunks.items()}
@@ -102,25 +102,26 @@ def collate_fn_conditional(samples):
     total_seconds = [x for _, _, _, x in samples]
     samples       = [x for x, _, _, _ in samples]
 
+    # subsets_in = [random.sample(list(range(len(sample))),
+    #                            k=random.randint(1, len(sample) - 1)) for sample in samples]
+    # subsets_out = [random.sample(list(set(range(len(samples[i]))) - set(indices)), k=1) for i, indices in enumerate(subsets_in)]
 
-    subsets_in = [random.sample(list(range(len(sample))),
-                                k=random.randint(1, len(sample) - 1)) for sample in samples]
-    subsets_out = [random.sample(list(set(range(len(samples[i]))) - set(indices)), k=1) for i, indices in enumerate(subsets_in)]
+    stem_keys = [list(sample.keys()) for sample in samples]
+    stem_keys_no_vocals = [[k for k in keys if not k.startswith('vocals')] for keys in stem_keys]
+    out_stems = [random.choice(keys) for keys in stem_keys_no_vocals]
+    in_stems = [[k for k in _in if k not in out] for _in, out in zip(stem_keys, out_stems)]
+    in_stems = [random.sample(keys, k=random.randint(1, len(keys))) for keys in in_stems]
 
     outputs = []
     inputs = []
     prompts = []
 
     for i, sample in enumerate(samples):
-        stem_keys = list(sample.keys())
-        in_indices, out_indices = subsets_in[i], subsets_out[i]
-        in_stems_prompt = [stem_keys[i] for i in in_indices]
-        out_stems_prompt = [stem_keys[i] for i in out_indices]
-        in_track = torch.stack([sample[stem_keys[i]] for i in in_indices]).sum(dim=0, keepdim=True)
-        out_track = torch.stack([sample[stem_keys[i]] for i in out_indices]).sum(dim=0, keepdim=True)
+        in_track = torch.stack([sample[stem] for stem in in_stems[i]]).sum(dim=0, keepdim=True)
+        out_track = sample[out_stems[i]].unsqueeze(0)
         outputs.append(out_track)
         inputs.append(in_track)
-        prompts.append(f"genre: {genres[i]}; in: {', '.join(in_stems_prompt)}; out: {', '.join(out_stems_prompt)}")
+        prompts.append(f"genre: {genres[i]}; in: {', '.join(in_stems[i])}; out: {out_stems[i]}")
 
     return torch.concat(outputs), torch.concat(inputs), prompts, start_seconds, total_seconds
 

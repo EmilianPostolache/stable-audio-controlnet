@@ -11,4 +11,5 @@ wandb/*
 *.log
 script/*
 ckpts/*
-notebook/out
+notebook/out*
+notebook/_*.ipynb
