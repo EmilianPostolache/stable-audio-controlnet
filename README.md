@@ -172,7 +172,7 @@ Checkpoints for audio conditioned ControlNet:
 
 ### Inference Notebook
 
-For model trained on MusDB, you can run `notebook/inference_musdb_audio_large.ipynb` for performing inference with the checkpoints. The notebook expects the checkpoints to be found in the folder `ckpts/musdb-audio`. Inference can be performed with a 16GB VRAM GPU. Inference notebook for MoisesDB model coming soon.
+For performing inference with model trained on MusDB (MoisesDB), you can run `notebook/inference_musdb_audio_large.ipynb` (`notebook/inference_moisesdb_audio_large.ipynb`). The notebook expects the checkpoints to be found in the folder `ckpts/musdb-audio` (`ckpts/moisesdb-audio`). Inference can be performed with a 16GB VRAM GPU.
 
 
 # Credits
