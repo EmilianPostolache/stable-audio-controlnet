@@ -104,6 +104,7 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Release demo checkpoints for accompaniments models (MusDB, MoisesDB).
 - [x] Add inference jupyter for checkpoints.
 - [x] Frozen embed conditioning with envelope working.
+- [ ] Add moisesdb + musdb combined dataset.
 - [ ] Combine base model (complex prompts) with controlnet model (tag prompts) via CFG-like inference term.
 - [ ] Check if frozen embed conditioning for chromagram is working.
 - [ ] Add multi ControlNet with random masking training.
