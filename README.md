@@ -6,17 +6,8 @@ and mixed fp16 (50% with 24GB VRAM GPU). **Work in progress, code is provided as
   
 ![alt text](res/gen.png)
 
-Example 1 (MoisesDB model):
-
-- [Input (Guitar, Bass)](res/track_moisesdb/input.wav)
-- [Generated (Piano)](res/track_moisesdb/generated.wav)
-- [Mix](res/track_moisesdb/mix.wav)
-
-Example 2 (MusDB model):
-
-- [Input (Other)](res/track_musdb/input.wav)
-- [Generated (Drums)](res/track_musdb/generated.wav)
-- [Mix](res/track_musdb/mix.wav)
+Examples (MoisesDB model):
+https://drive.google.com/drive/folders/1C7Q1hvUXH-0eAC-XaH6KtmHBpQYzo36a?usp=drive_link
 
 # Quick start
 To initialize ControlNet based on `stable-audio-open` checkpoint, retaining `depth_factor` layers (e.g., `depth_factor` = 0.2 retains 20% of layers
@@ -181,3 +172,5 @@ For performing inference with model trained on MusDB (MoisesDB), you can run `no
 - Zhang, L., Rao, A., & Agrawala, M. (2023). Adding conditional control to text-to-image diffusion models. In Proceedings of the IEEE/CVF International Conference on Computer Vision (pp. 3836-3847).
 - Wu, S. L., Donahue, C., Watanabe, S., & Bryan, N. J. (2024). Music controlnet: Multiple time-varying controls for music generation. IEEE/ACM Transactions on Audio, Speech, and Language Processing, 32, 2692-2703.
 - Chen, J., Wu, Y., Luo, S., Xie, E., Paul, S., Luo, P., ... & Li, Z. (2024). Pixart-{\delta}: Fast and controllable image generation with latent consistency models. arXiv preprint arXiv:2401.05252.
+- Rafii, Z., Liutkus, A., Stöter, F.-R., Mimilakis, S. I., & Bittner, R. (2019, December). MUSDB18-HQ - an uncompressed version of MUSDB18. doi:10.5281/zenodo.3338373
+- Pereira, I., Araújo, F., Korzeniowski, F., & Vogl, R. (2023). Moisesdb: A dataset for source separation beyond 4-stems. arXiv preprint arXiv:2307.15913.
