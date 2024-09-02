@@ -1,6 +1,6 @@
 MIT License
 
-Concerning everything except the checkpoints trained on MoisesDB data and the MoisesDB samples.
+Concerning everything except the MUSDB18 / MoisesDB data and the model checkpoints trained on MUSDB18 / MoisesDB data.
 
 Copyright (c) 2024 Emilian Postolache
 
