@@ -4,7 +4,7 @@ Fine-tune Stable Audio Open with DiT ControlNet. On 16GB VRAM GPU you can use ad
 and mixed fp16 (50% with 24GB VRAM GPU). **Work in progress, code is provided as-is!**
 
   
-![alt text](res/logo.png)
+![alt text](res/logo.jpg)
 
 Examples (MoisesDB model):
 https://drive.google.com/drive/folders/1C7Q1hvUXH-0eAC-XaH6KtmHBpQYzo36a?usp=drive_link
