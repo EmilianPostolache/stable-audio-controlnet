@@ -167,8 +167,8 @@ datamodule.val_dataset.path=data/musdb18hq/test.tar \
 ### Pre-trained checkpoints
 
 Checkpoints for audio conditioned ControlNet:
-- (Trained on MusDB (0.5 DiT))[https://drive.google.com/drive/folders/1-EcM7RWDbLLULrcURZBFSkginaJtq_Zv?usp=sharing]. Configuration file: `exp/train_musdb_controlnet_audio_large.yaml`.
-- (Trained on MoisesDB (0.5 DiT))[https://drive.google.com/drive/folders/1gtAJVeZmNe3fmu-WokF3n3eSaySZumrx?usp=sharing]. Configuration file: `exp/train_moisesdb_controlnet_audio_large.yaml`.
+- [Trained on MusDB (0.5 DiT)](https://drive.google.com/drive/folders/1-EcM7RWDbLLULrcURZBFSkginaJtq_Zv?usp=sharing). Configuration file: `exp/train_musdb_controlnet_audio_large.yaml`.
+- [Trained on MoisesDB (0.5 DiT)](https://drive.google.com/drive/folders/1gtAJVeZmNe3fmu-WokF3n3eSaySZumrx?usp=sharing). Configuration file: `exp/train_moisesdb_controlnet_audio_large.yaml`.
 
 ### Inference Notebook
 
