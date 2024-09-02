@@ -110,10 +110,9 @@ The ControlNet architecture is implemented by defining two classes (in `diffusio
 - [x] Add input and embeds ControlNet conditioning scales.
 - [x] Add envelope ControlNet.
 - [x] Add chromagram mask ControlNet.
-- [x] Release demo checkpoints (MusDB).
+- [x] Release demo checkpoints for accompaniments models (MusDB, MoisesDB).
 - [x] Add inference jupyter for checkpoints.
-- [ ] Release demo checkpoints (MoisesDB).
-- [ ] Frozen embed conditioning with envelope working. 
+- [x] Frozen embed conditioning with envelope working. 
 - [ ] Check if frozen embed conditioning for chromagram is working.
 - [ ] Add multi ControlNet with random masking training.
 
@@ -167,13 +166,13 @@ datamodule.val_dataset.path=data/musdb18hq/test.tar \
 
 ### Pre-trained checkpoints
 
-Checkpoints for audio conditioned ControlNet trained on MusDB (0.5 DiT): https://drive.google.com/drive/folders/1-EcM7RWDbLLULrcURZBFSkginaJtq_Zv?usp=sharing
-They correspond to `exp/train_musdb_controlnet_audio_large.yaml` configuration.
+Checkpoints for audio conditioned ControlNet:
+- (Trained on MusDB (0.5 DiT))[https://drive.google.com/drive/folders/1-EcM7RWDbLLULrcURZBFSkginaJtq_Zv?usp=sharing]. Configuration file: `exp/train_musdb_controlnet_audio_large.yaml`.
+- (Trained on MoisesDB (0.5 DiT))[https://drive.google.com/drive/folders/1gtAJVeZmNe3fmu-WokF3n3eSaySZumrx?usp=sharing]. Configuration file: `exp/train_moisesdb_controlnet_audio_large.yaml`.
 
 ### Inference Notebook
 
-You can run `notebook/inference_musdb_audio_large.ipynb` for performing inference with the above checkpoints. The notebook
-expects the checkpoints to be found in the folder `ckpts/musdb-audio`. Inference can be performed with a 16GB VRAM GPU.
+For model trained on MusDB, you can run `notebook/inference_musdb_audio_large.ipynb` for performing inference with the checkpoints. The notebook expects the checkpoints to be found in the folder `ckpts/musdb-audio`. Inference can be performed with a 16GB VRAM GPU. Inference notebook for MoisesDB model coming soon.
 
 
 # Credits
